@@ -9,7 +9,7 @@
   :root {
     --bg: #0e0f0e; --surface: #181a18; --surface2: #1f221f; --border: #2a2e2a;
     --accent: #b8f060; --accent2: #7ed957; --kakao: #FAE100;
-    --naver: #03C75A; --text: #f0f0ec; --text-muted: #7a7d76; --text-dim: #4a4d48;
+    --naver: #03C75A; --blog: #00B4D8; --text: #f0f0ec; --text-muted: #7a7d76; --text-dim: #4a4d48;
     --radius: 14px; --font-serif: 'Noto Serif KR', serif; --font-sans: 'Noto Sans KR', sans-serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,7 +25,7 @@
   h1 em { font-style: normal; color: var(--accent); }
   .subtitle { font-size: 15px; color: var(--text-muted); font-weight: 300; line-height: 1.6; }
   .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
-  .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-size: 14px; font-family: var(--font-sans); font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-family: var(--font-sans); font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .tab-btn.active { background: var(--accent); color: var(--bg); font-weight: 700; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
@@ -55,13 +55,14 @@
   .loading-dots span { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s infinite; }
   .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
   .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce { 0%,80%,100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-8px); opacity: 1; } }
+  @keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-8px);opacity:1} }
   .loading-text { font-size: 14px; color: var(--text-muted); }
-  .result-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
-  .result-tab-btn { padding: 8px 16px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); font-size: 13px; font-family: var(--font-sans); font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .result-tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+  .result-tab-btn { padding: 8px 14px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); font-size: 12px; font-family: var(--font-sans); font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .result-tab-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
   .result-tab-btn.kakao-tab.active { background: var(--kakao); color: #1a1a1a; border-color: var(--kakao); }
   .result-tab-btn.naver-tab.active { background: var(--naver); color: #fff; border-color: var(--naver); }
+  .result-tab-btn.blog-tab.active { background: var(--blog); color: #fff; border-color: var(--blog); }
   .results { display: none; }
   .results.show { display: block; }
   .result-content { display: none; }
@@ -70,9 +71,8 @@
   .result-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; }
   .result-badge { background: rgba(184,240,96,0.15); color: var(--accent); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(184,240,96,0.3); }
   .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
-  .result-card:nth-child(2) { animation-delay: 0.1s; }
-  .result-card:nth-child(3) { animation-delay: 0.2s; }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .result-card:nth-child(2){animation-delay:0.1s} .result-card:nth-child(3){animation-delay:0.2s}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
   .result-card:hover { border-color: rgba(184,240,96,0.3); }
   .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   .card-type { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); text-transform: uppercase; }
@@ -80,42 +80,48 @@
   .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
   .copy-btn.copied { background: rgba(184,240,96,0.1); border-color: var(--accent); color: var(--accent); }
   .card-content { font-size: 15px; line-height: 1.8; color: var(--text); font-weight: 300; white-space: pre-wrap; }
-
-  /* 네이버 부동산 섹션 */
   .naver-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
-  .naver-card:nth-child(2) { animation-delay: 0.1s; }
-  .naver-card:nth-child(3) { animation-delay: 0.2s; }
+  .naver-card:nth-child(2){animation-delay:0.1s}
   .naver-card:hover { border-color: rgba(3,199,90,0.3); }
   .naver-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--naver); text-transform: uppercase; margin-bottom: 8px; }
   .char-counter { font-size: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
   .char-count { font-weight: 700; }
-  .char-count.ok { color: var(--naver); }
-  .char-count.warn { color: #FAC775; }
-  .char-count.over { color: #ff5050; }
+  .char-count.ok{color:var(--naver)} .char-count.warn{color:#FAC775} .char-count.over{color:#ff5050}
   .char-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
   .char-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
   .naver-content { font-size: 14px; line-height: 1.8; color: var(--text); font-weight: 300; white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
   .naver-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .naver-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 7px 14px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
   .naver-btn:hover { border-color: var(--naver); color: var(--naver); }
-  .naver-btn.copy:hover { border-color: var(--accent); color: var(--accent); }
-  .naver-btn.copied { background: rgba(184,240,96,0.1); border-color: var(--accent); color: var(--accent); }
+  .naver-btn.copy-green { border-color: var(--accent); color: var(--accent); }
+  .naver-btn.copied { background: rgba(184,240,96,0.1); }
   .limit-badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; }
-  .limit-badge.ok { background: rgba(3,199,90,0.15); color: var(--naver); }
-  .limit-badge.over { background: rgba(255,80,80,0.15); color: #ff5050; }
+  .limit-badge.ok{background:rgba(3,199,90,0.15);color:var(--naver)} .limit-badge.over{background:rgba(255,80,80,0.15);color:#ff5050}
 
-  /* 카카오 */
+  /* 블로그 섹션 */
+  .blog-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  .blog-card:hover { border-color: rgba(0,180,216,0.3); }
+  .blog-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--blog); text-transform: uppercase; margin-bottom: 16px; }
+  .blog-tip { background: rgba(0,180,216,0.08); border: 1px solid rgba(0,180,216,0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--blog); margin-bottom: 16px; line-height: 1.6; }
+  .blog-content { font-size: 14px; line-height: 2; color: var(--text); font-weight: 300; white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 12px; max-height: 400px; overflow-y: auto; }
+  .blog-content::-webkit-scrollbar { width: 4px; }
+  .blog-content::-webkit-scrollbar-track { background: var(--surface2); }
+  .blog-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .blog-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .blog-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .blog-btn:hover { border-color: var(--blog); color: var(--blog); }
+  .blog-btn.primary { border-color: var(--accent); color: var(--accent); }
+  .blog-btn.copied { background: rgba(184,240,96,0.1); border-color: var(--accent); color: var(--accent); }
+  .blog-char { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+
   .kakao-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
-  .kakao-section:nth-child(2) { animation-delay: 0.1s; }
-  .kakao-section:nth-child(3) { animation-delay: 0.2s; }
+  .kakao-section:nth-child(2){animation-delay:0.1s} .kakao-section:nth-child(3){animation-delay:0.2s}
   .kakao-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--kakao); text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
   .kakao-bubble { background: var(--kakao); color: #1a1a1a; border-radius: 0 12px 12px 12px; padding: 16px 18px; font-size: 14px; line-height: 1.8; white-space: pre-wrap; margin-bottom: 12px; position: relative; max-width: 80%; }
   .kakao-bubble::before { content: ''; position: absolute; top: 0; left: -8px; width: 0; height: 0; border-top: 8px solid var(--kakao); border-left: 8px solid transparent; }
   .kakao-copy-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; font-size: 13px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
   .kakao-copy-btn:hover { border-color: var(--kakao); color: var(--kakao); }
   .kakao-copy-btn.copied { background: rgba(250,225,0,0.1); border-color: var(--kakao); color: var(--kakao); }
-
-  /* 히스토리 */
   .history-empty { text-align: center; padding: 60px 0; color: var(--text-muted); }
   .history-empty-icon { font-size: 40px; margin-bottom: 12px; }
   .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 12px; transition: all 0.2s; }
@@ -137,13 +143,7 @@
   .toast.show { opacity: 1; transform: translateY(0); }
   footer { text-align: center; padding: 48px 0 32px; font-size: 13px; color: var(--text-dim); border-top: 1px solid var(--border); margin-top: 48px; }
   footer a { color: var(--accent); text-decoration: none; }
-  @media (max-width: 600px) {
-    .form-grid { grid-template-columns: 1fr; }
-    .form-grid.three { grid-template-columns: 1fr 1fr; }
-    .tone-grid { grid-template-columns: repeat(2, 1fr); }
-    .form-section { padding: 20px; }
-    .kakao-bubble { max-width: 100%; }
-  }
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}}
 </style>
 </head>
 <body>
@@ -154,11 +154,11 @@
       <div class="logo-text">매물<span>AI</span></div>
     </div>
     <h1>설명문은 AI가,<br>중개는 <em>당신이.</em></h1>
-    <p class="subtitle">매물 정보 입력 → 설명문 + 네이버 형식 + 카카오톡 문자 자동 생성</p>
+    <p class="subtitle">설명문 · 네이버 부동산 · 블로그 포스팅 · 카카오톡 문자 한 번에 자동 생성</p>
   </header>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('generate')">⚡ 설명문 생성</button>
+    <button class="tab-btn active" onclick="switchTab('generate')">⚡ 생성</button>
     <button class="tab-btn" onclick="switchTab('history')">📁 저장된 매물</button>
   </div>
 
@@ -189,6 +189,10 @@
         <label>특이사항 (장점, 옵션 등)</label>
         <textarea id="features" placeholder="바다뷰, 풀옵션, 주차 2대, 신축 등"></textarea>
       </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>주변 환경 (블로그용, 선택)</label>
+        <input type="text" id="nearby" placeholder="해운대해수욕장 도보 5분, 지하철 2호선 해운대역 10분" />
+      </div>
       <div class="field" style="margin-bottom:24px">
         <label>고객 이름 (카카오톡 문자용, 선택)</label>
         <input type="text" id="customerName" placeholder="홍길동 고객님" />
@@ -203,11 +207,11 @@
     </div>
 
     <div class="error-box" id="errorBox"></div>
-    <button class="generate-btn" onclick="generate()" id="generateBtn">⚡ 설명문 + 네이버 + 카카오톡 자동 생성</button>
+    <button class="generate-btn" onclick="generate()" id="generateBtn">⚡ 전체 자동 생성 (설명문 + 블로그 + 카카오톡)</button>
 
     <div class="loading" id="loading">
       <div class="loading-dots"><span></span><span></span><span></span></div>
-      <div class="loading-text">AI가 설명문을 작성하고 있습니다...</div>
+      <div class="loading-text">AI가 모든 콘텐츠를 작성하고 있습니다... (약 20~30초)</div>
     </div>
 
     <div class="results" id="results" style="margin-top:32px">
@@ -217,11 +221,13 @@
       </div>
       <div class="result-tabs">
         <button class="result-tab-btn active" onclick="switchResultTab('desc')">📝 설명문</button>
-        <button class="result-tab-btn naver-tab" onclick="switchResultTab('naver')">🟢 네이버 형식</button>
+        <button class="result-tab-btn naver-tab" onclick="switchResultTab('naver')">🟢 네이버 부동산</button>
+        <button class="result-tab-btn blog-tab" onclick="switchResultTab('blog')">📰 네이버 블로그</button>
         <button class="result-tab-btn kakao-tab" onclick="switchResultTab('kakao')">💬 카카오톡</button>
       </div>
       <div class="result-content active" id="result-desc"><div id="resultCards"></div></div>
       <div class="result-content" id="result-naver"><div id="naverCards"></div></div>
+      <div class="result-content" id="result-blog"><div id="blogCards"></div></div>
       <div class="result-content" id="result-kakao"><div id="kakaoCards"></div></div>
     </div>
   </div>
@@ -243,60 +249,53 @@
   let selectedTone = '감성적';
 
   function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active',(i===0&&tab==='generate')||(i===1&&tab==='history')));
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&tab==='generate')||(i===1&&tab==='history')));
     document.getElementById('tab-generate').classList.toggle('active',tab==='generate');
     document.getElementById('tab-history').classList.toggle('active',tab==='history');
     if(tab==='history') renderHistory();
   }
 
   function switchResultTab(tab) {
-    document.querySelectorAll('.result-tab-btn').forEach((b,i) => b.classList.toggle('active',(i===0&&tab==='desc')||(i===1&&tab==='naver')||(i===2&&tab==='kakao')));
-    ['desc','naver','kakao'].forEach(t => document.getElementById('result-'+t).classList.toggle('active',t===tab));
+    const tabs=['desc','naver','blog','kakao'];
+    document.querySelectorAll('.result-tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));
+    tabs.forEach(t=>document.getElementById('result-'+t).classList.toggle('active',t===tab));
   }
 
   function selectTone(btn) {
-    document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tone-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    selectedTone = btn.dataset.tone;
+    selectedTone=btn.dataset.tone;
   }
 
   function cleanText(text) {
-    return text.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F\u{A960}-\u{D7FF}a-zA-Z0-9\s.,!?()%㎡·\-~]/gu, '').replace(/\s+/g,' ').trim();
-  }
-
-  function truncateToLimit(text, limit) {
-    if(text.length <= limit) return text;
-    return text.slice(0, limit-3) + '...';
+    return text.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F a-zA-Z0-9\s.,!?()%㎡·\-~]/g,'').replace(/\s+/g,' ').trim();
   }
 
   async function generate() {
-    const location = document.getElementById('location').value.trim();
-    const price = document.getElementById('price').value.trim();
-    const area = document.getElementById('area').value.trim();
-    const floor = document.getElementById('floor').value.trim();
-    const direction = document.getElementById('direction').value;
-    const rooms = document.getElementById('rooms').value.trim();
-    const bathrooms = document.getElementById('bathrooms').value.trim();
-    const moveIn = document.getElementById('moveIn').value.trim();
-    const features = document.getElementById('features').value.trim();
-    const customerName = document.getElementById('customerName').value.trim();
+    const location=document.getElementById('location').value.trim();
+    const price=document.getElementById('price').value.trim();
+    const area=document.getElementById('area').value.trim();
+    const floor=document.getElementById('floor').value.trim();
+    const direction=document.getElementById('direction').value;
+    const rooms=document.getElementById('rooms').value.trim();
+    const bathrooms=document.getElementById('bathrooms').value.trim();
+    const moveIn=document.getElementById('moveIn').value.trim();
+    const features=document.getElementById('features').value.trim();
+    const nearby=document.getElementById('nearby').value.trim();
+    const customerName=document.getElementById('customerName').value.trim();
 
-    const errorBox = document.getElementById('errorBox');
+    const errorBox=document.getElementById('errorBox');
     errorBox.classList.remove('show');
 
-    if(!location || !price) {
-      errorBox.textContent = '위치와 가격은 필수 입력 항목입니다.';
-      errorBox.classList.add('show');
-      return;
-    }
+    if(!location||!price){errorBox.textContent='위치와 가격은 필수 입력 항목입니다.';errorBox.classList.add('show');return;}
 
-    const btn = document.getElementById('generateBtn');
-    btn.disabled = true;
+    const btn=document.getElementById('generateBtn');
+    btn.disabled=true;
     document.getElementById('loading').classList.add('show');
     document.getElementById('results').classList.remove('show');
 
-    const prompt = `당신은 10년 경력의 전문 부동산 공인중개사입니다.
-아래 매물 정보를 바탕으로 작성해주세요.
+    const prompt=`당신은 10년 경력의 전문 부동산 공인중개사이자 부동산 블로그 전문 작가입니다.
+아래 매물 정보를 바탕으로 모든 항목을 작성해주세요. 반드시 ###태그### 형식을 정확히 지켜주세요.
 
 [매물 정보]
 - 위치: ${location}
@@ -307,216 +306,272 @@
 - 방/욕실: ${rooms||'미입력'}룸 ${bathrooms||'미입력'}욕실
 - 입주가능일: ${moveIn||'협의'}
 - 특이사항: ${features||'없음'}
+- 주변환경: ${nearby||'미입력'}
 - 작성 톤: ${selectedTone}
-- 고객 이름: ${customerName||'고객님'}
+- 고객이름: ${customerName||'고객님'}
 
-[A. 설명문 3가지]
+===== A. 기본 설명문 =====
+
 ###짧은버전###
-(100자 내외)
+(100자 내외, 핵심만 임팩트 있게)
 ###끝###
+
 ###표준버전###
-(300자 내외)
-###끝###
-###블로그버전###
-(600자 내외)
+(300자 내외, 장점 강조, 자연스럽게)
 ###끝###
 
-[B. 네이버 부동산 전용 - 반드시 순수 텍스트만, 특수문자 없이]
+###블로그설명###
+(600자 내외, 스토리텔링)
+###끝###
+
+===== B. 네이버 부동산 전용 =====
+
 ###네이버제목###
-(40자 이내, 핵심 정보만, 특수문자 없음)
-###끝###
-###네이버본문###
-(500자 이내, 네이버 부동산 등록용, 특수문자 없이 순수 텍스트만)
+(40자 이내, 특수문자 없이 순수 텍스트)
 ###끝###
 
-[C. 카카오톡 문자 3가지]
+###네이버본문###
+(500자 이내, 특수문자 없이 순수 텍스트만, 줄바꿈 최소화)
+###끝###
+
+===== C. 네이버 블로그 포스팅 (2000자 이상, 바로 복붙 가능하게) =====
+
+###블로그전체###
+아래 구조로 작성해주세요:
+
+[제목]
+클릭을 유도하는 SEO 최적화 제목 (키워드 포함)
+
+[도입부]
+독자의 공감을 이끄는 감성적인 도입 2~3문장
+
+[매물 기본 정보]
+📍 위치:
+💰 가격:
+📐 면적:
+🏢 층수/방향:
+🛏 방/욕실:
+📅 입주가능일:
+
+[상세 설명]
+매물의 장점과 특징을 구체적으로 설명 (500자 이상)
+
+[주변 환경]
+주변 편의시설, 교통, 학군 설명 (300자 이상)
+
+[이런 분께 추천드려요]
+- 추천 대상 3가지
+
+[마무리]
+자연스러운 마무리 + 문의 유도
+
+[해시태그]
+#관련키워드 20개 이상
+###끝###
+
+===== D. 카카오톡 문자 =====
+
 ###카카오첫연락###
 (150자 내외, 친근하게)
 ###끝###
+
 ###카카오임장후###
 (200자 내외, 감사 + 정리)
 ###끝###
+
 ###카카오팔로업###
 (100자 내외, 부담없이)
 ###끝###`;
 
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      });
-      const data = await response.json();
-      if(!response.ok) throw new Error(data.error || 'API 오류');
+      const response=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.error||'API 오류');
       showResults(data.result);
-      saveToHistory({ id: Date.now(), location, price, area, floor, direction, rooms, bathrooms, moveIn, features, customerName, tone: selectedTone, result: data.result, date: new Date().toLocaleDateString('ko-KR') });
+      saveToHistory({id:Date.now(),location,price,area,floor,direction,rooms,bathrooms,moveIn,features,nearby,customerName,tone:selectedTone,result:data.result,date:new Date().toLocaleDateString('ko-KR')});
       showToast('✓ 저장 완료');
     } catch(err) {
-      errorBox.textContent = '오류: ' + err.message;
+      errorBox.textContent='오류: '+err.message;
       errorBox.classList.add('show');
     } finally {
-      btn.disabled = false;
+      btn.disabled=false;
       document.getElementById('loading').classList.remove('show');
     }
   }
 
   function showResults(text) {
     // 설명문
-    const descTypes = [
-      { key: '짧은버전', label: '짧은 버전 (100자)', tag: 'SHORT' },
-      { key: '표준버전', label: '표준 버전 (300자)', tag: 'STANDARD' },
-      { key: '블로그버전', label: '블로그용 버전 (600자)', tag: 'BLOG' }
+    const descTypes=[
+      {key:'짧은버전',label:'짧은 버전 (100자)',tag:'SHORT'},
+      {key:'표준버전',label:'표준 버전 (300자)',tag:'STANDARD'},
+      {key:'블로그설명',label:'블로그 설명 (600자)',tag:'BLOG'}
     ];
-    const cards = document.getElementById('resultCards');
-    cards.innerHTML = '';
-    descTypes.forEach(t => {
-      const match = text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
-      const content = match ? match[1].trim() : '생성 오류';
-      const card = document.createElement('div');
-      card.className = 'result-card';
-      card.innerHTML = `<div class="card-header"><div class="card-type">${t.tag} — ${t.label}</div><button class="copy-btn" onclick="copyText(this,\`${content.replace(/`/g,'\\`').replace(/\n/g,'\\n')}\`)">복사</button></div><div class="card-content">${content}</div>`;
+    const cards=document.getElementById('resultCards');
+    cards.innerHTML='';
+    descTypes.forEach(t=>{
+      const match=text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
+      const content=match?match[1].trim():'생성 오류';
+      const card=document.createElement('div');
+      card.className='result-card';
+      card.innerHTML=`<div class="card-header"><div class="card-type">${t.tag} — ${t.label}</div><button class="copy-btn" onclick="copyText(this,\`${esc(content)}\`)">복사</button></div><div class="card-content">${content}</div>`;
       cards.appendChild(card);
     });
 
-    // 네이버 형식
-    const naverCards = document.getElementById('naverCards');
-    naverCards.innerHTML = '';
-    const naverTypes = [
-      { key: '네이버제목', label: '매물 제목', limit: 40, tag: 'TITLE' },
-      { key: '네이버본문', label: '매물 본문', limit: 500, tag: 'BODY' }
-    ];
-    naverTypes.forEach((t, i) => {
-      const match = text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
-      let content = match ? match[1].trim() : '생성 오류';
-      content = cleanText(content);
-      const truncated = truncateToLimit(content, t.limit);
-      const len = truncated.length;
-      const pct = Math.min((len/t.limit)*100, 100);
-      const status = len > t.limit ? 'over' : len > t.limit*0.9 ? 'warn' : 'ok';
-      const barColor = status === 'over' ? '#ff5050' : status === 'warn' ? '#FAC775' : '#03C75A';
-
-      const div = document.createElement('div');
-      div.className = 'naver-card';
-      div.style.animationDelay = (i*0.1)+'s';
-      div.innerHTML = `
-        <div class="naver-label">🟢 ${t.tag} — ${t.label}</div>
-        <div class="char-counter">
-          <span class="char-count ${status}">${len}자</span>
-          <div class="char-bar"><div class="char-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
-          <span class="limit-badge ${len>t.limit?'over':'ok'}">${t.limit}자 제한 ${len>t.limit?'초과':'이내'}</span>
-        </div>
-        <div class="naver-content">${truncated}</div>
-        <div class="naver-actions">
-          <button class="naver-btn copy" onclick="copyText(this,\`${truncated.replace(/`/g,'\\`').replace(/\n/g,'\\n')}\`)">📋 복사</button>
-          <button class="naver-btn" onclick="cleanAndCopy(this,\`${content.replace(/`/g,'\\`').replace(/\n/g,'\\n')}\`,${t.limit})">✂️ ${t.limit}자로 잘라서 복사</button>
-        </div>`;
+    // 네이버
+    const naverCards=document.getElementById('naverCards');
+    naverCards.innerHTML='';
+    [{key:'네이버제목',label:'매물 제목',limit:40,tag:'TITLE'},{key:'네이버본문',label:'매물 본문',limit:500,tag:'BODY'}].forEach((t,i)=>{
+      const match=text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
+      let content=match?match[1].trim():'생성 오류';
+      content=cleanText(content);
+      const truncated=content.length>t.limit?content.slice(0,t.limit-3)+'...':content;
+      const len=truncated.length;
+      const pct=Math.min((len/t.limit)*100,100);
+      const status=len>t.limit?'over':len>t.limit*0.9?'warn':'ok';
+      const barColor=status==='over'?'#ff5050':status==='warn'?'#FAC775':'#03C75A';
+      const div=document.createElement('div');
+      div.className='naver-card';
+      div.style.animationDelay=(i*0.1)+'s';
+      div.innerHTML=`<div class="naver-label">🟢 ${t.tag} — ${t.label}</div><div class="char-counter"><span class="char-count ${status}">${len}자</span><div class="char-bar"><div class="char-bar-fill" style="width:${pct}%;background:${barColor}"></div></div><span class="limit-badge ${len>t.limit?'over':'ok'}">${t.limit}자 제한 ${len>t.limit?'초과':'이내'}</span></div><div class="naver-content">${truncated}</div><div class="naver-actions"><button class="naver-btn copy-green" onclick="copyText(this,\`${esc(truncated)}\`)">📋 복사</button><button class="naver-btn" onclick="sliceAndCopy(this,\`${esc(content)}\`,${t.limit})">✂️ ${t.limit}자로 잘라 복사</button></div>`;
       naverCards.appendChild(div);
     });
 
+    // 블로그
+    const blogCards=document.getElementById('blogCards');
+    blogCards.innerHTML='';
+    const blogMatch=text.match(/###블로그전체###([\s\S]*?)###끝###/);
+    const blogContent=blogMatch?blogMatch[1].trim():'블로그 포스팅 생성 오류';
+    const blogLen=blogContent.length;
+    const blogDiv=document.createElement('div');
+    blogDiv.className='blog-card';
+    blogDiv.innerHTML=`
+      <div class="blog-label">📰 네이버 블로그 포스팅</div>
+      <div class="blog-tip">💡 아래 내용을 전체 복사해서 네이버 블로그에 바로 붙여넣기 하세요. 사진만 추가하면 완성!</div>
+      <div class="blog-char">총 ${blogLen.toLocaleString()}자</div>
+      <div class="blog-content">${blogContent}</div>
+      <div class="blog-actions">
+        <button class="blog-btn primary" onclick="copyText(this,\`${esc(blogContent)}\`)">📋 전체 복사</button>
+        <button class="blog-btn" onclick="copySection(this,'제목',\`${esc(blogContent)}\`)">제목만 복사</button>
+        <button class="blog-btn" onclick="copySection(this,'해시태그',\`${esc(blogContent)}\`)">해시태그만 복사</button>
+      </div>`;
+    blogCards.appendChild(blogDiv);
+
     // 카카오
-    const kakaoCards = document.getElementById('kakaoCards');
-    kakaoCards.innerHTML = '';
-    const kakaoTypes = [
-      { key: '카카오첫연락', label: '첫 연락 문자', icon: '👋' },
-      { key: '카카오임장후', label: '임장 후 감사 문자', icon: '🏠' },
-      { key: '카카오팔로업', label: '팔로업 문자', icon: '📱' }
-    ];
-    kakaoTypes.forEach((t, i) => {
-      const match = text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
-      const content = match ? match[1].trim() : '생성 오류';
-      const div = document.createElement('div');
-      div.className = 'kakao-section';
-      div.style.animationDelay = (i*0.1)+'s';
-      div.innerHTML = `<div class="kakao-label">${t.icon} ${t.label}</div><div class="kakao-bubble">${content}</div><button class="kakao-copy-btn" onclick="copyText(this,\`${content.replace(/`/g,'\\`').replace(/\n/g,'\\n')}\`)">💬 복사하기</button>`;
+    const kakaoCards=document.getElementById('kakaoCards');
+    kakaoCards.innerHTML='';
+    [{key:'카카오첫연락',label:'첫 연락 문자',icon:'👋'},{key:'카카오임장후',label:'임장 후 감사 문자',icon:'🏠'},{key:'카카오팔로업',label:'팔로업 문자',icon:'📱'}].forEach((t,i)=>{
+      const match=text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
+      const content=match?match[1].trim():'생성 오류';
+      const div=document.createElement('div');
+      div.className='kakao-section';
+      div.style.animationDelay=(i*0.1)+'s';
+      div.innerHTML=`<div class="kakao-label">${t.icon} ${t.label}</div><div class="kakao-bubble">${content}</div><button class="kakao-copy-btn" onclick="copyText(this,\`${esc(content)}\`)">💬 복사하기</button>`;
       kakaoCards.appendChild(div);
     });
 
-    document.getElementById('resultBadge').textContent = selectedTone + ' 버전';
+    document.getElementById('resultBadge').textContent=selectedTone+' 버전';
     document.getElementById('results').classList.add('show');
     switchResultTab('desc');
-    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
   }
 
-  function cleanAndCopy(btn, text, limit) {
-    const clean = text.replace(/\n/g,' ').slice(0, limit);
-    navigator.clipboard.writeText(clean).then(() => {
-      const orig = btn.textContent;
-      btn.textContent = '✓ 복사됨';
+  function esc(str) {
+    return str.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\n/g,'\\n');
+  }
+
+  function copySection(btn, section, text) {
+    const decoded = text.replace(/\\n/g,'\n');
+    const markers = {'제목': /\[제목\]([\s\S]*?)\[/, '해시태그': /\[해시태그\]([\s\S]*?)$/};
+    const match = decoded.match(markers[section]);
+    const content = match ? match[1].trim() : decoded;
+    navigator.clipboard.writeText(content).then(()=>{
+      const orig=btn.textContent;
+      btn.textContent='✓ 복사됨';
       btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+      setTimeout(()=>{btn.textContent=orig;btn.classList.remove('copied');},2000);
+    });
+  }
+
+  function sliceAndCopy(btn, text, limit) {
+    const clean=text.replace(/\\n/g,' ').slice(0,limit);
+    navigator.clipboard.writeText(clean).then(()=>{
+      const orig=btn.textContent;
+      btn.textContent='✓ 복사됨';
+      setTimeout(()=>{btn.textContent=orig;},2000);
     });
   }
 
   function saveToHistory(item) {
-    const history = getHistory();
+    const history=getHistory();
     history.unshift(item);
-    if(history.length > 50) history.pop();
-    localStorage.setItem('maemulair_history', JSON.stringify(history));
+    if(history.length>50) history.pop();
+    localStorage.setItem('maemulair_history',JSON.stringify(history));
   }
 
   function getHistory() {
-    try { return JSON.parse(localStorage.getItem('maemulair_history')||'[]'); } catch { return []; }
+    try{return JSON.parse(localStorage.getItem('maemulair_history')||'[]');}catch{return[];}
   }
 
   function renderHistory() {
-    const history = getHistory();
-    const list = document.getElementById('historyList');
-    const count = document.getElementById('historyCount');
-    if(history.length === 0) {
-      count.textContent = '';
-      list.innerHTML = `<div class="history-empty"><div class="history-empty-icon">📭</div><div>아직 저장된 매물이 없습니다.</div><div style="font-size:13px;margin-top:8px;color:var(--text-dim)">설명문을 생성하면 자동으로 저장됩니다.</div></div>`;
+    const history=getHistory();
+    const list=document.getElementById('historyList');
+    const count=document.getElementById('historyCount');
+    if(history.length===0){
+      count.textContent='';
+      list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📭</div><div>아직 저장된 매물이 없습니다.</div><div style="font-size:13px;margin-top:8px;color:var(--text-dim)">설명문을 생성하면 자동으로 저장됩니다.</div></div>`;
       return;
     }
-    count.textContent = `총 ${history.length}개의 매물`;
-    list.innerHTML = '';
-    history.forEach((item, idx) => {
-      const preview = item.result ? item.result.replace(/###[^#]+###/g,'').replace(/\n/g,' ').trim().slice(0,80)+'...' : '';
-      const div = document.createElement('div');
-      div.className = 'history-item';
-      div.innerHTML = `<div class="history-header"><div class="history-location">${item.location} · ${item.price}</div><div class="history-meta"><span class="history-tone">${item.tone}</span><span class="history-date">${item.date}</span></div></div><div class="history-preview">${preview}</div><div class="history-actions"><button class="history-btn" onclick="loadHistory(${idx})">📋 불러오기</button><button class="history-btn" onclick="viewHistory(${idx})">👁 보기</button><button class="history-btn danger" onclick="deleteHistory(${idx})">🗑 삭제</button></div>`;
+    count.textContent=`총 ${history.length}개의 매물`;
+    list.innerHTML='';
+    history.forEach((item,idx)=>{
+      const preview=item.result?item.result.replace(/###[^#]+###/g,'').replace(/\n/g,' ').trim().slice(0,80)+'...':'';
+      const div=document.createElement('div');
+      div.className='history-item';
+      div.innerHTML=`<div class="history-header"><div class="history-location">${item.location} · ${item.price}</div><div class="history-meta"><span class="history-tone">${item.tone}</span><span class="history-date">${item.date}</span></div></div><div class="history-preview">${preview}</div><div class="history-actions"><button class="history-btn" onclick="loadHistory(${idx})">📋 불러오기</button><button class="history-btn" onclick="viewHistory(${idx})">👁 보기</button><button class="history-btn danger" onclick="deleteHistory(${idx})">🗑 삭제</button></div>`;
       list.appendChild(div);
     });
   }
 
   function loadHistory(idx) {
-    const item = getHistory()[idx];
-    ['location','price','area','floor','direction','rooms','bathrooms','moveIn','features','customerName'].forEach(k => {
-      document.getElementById(k).value = item[k] || '';
+    const item=getHistory()[idx];
+    ['location','price','area','floor','direction','rooms','bathrooms','moveIn','features','nearby','customerName'].forEach(k=>{
+      const el=document.getElementById(k);
+      if(el) el.value=item[k]||'';
     });
-    document.querySelectorAll('.tone-btn').forEach(b => b.classList.toggle('active', b.dataset.tone === item.tone));
-    selectedTone = item.tone;
+    document.querySelectorAll('.tone-btn').forEach(b=>b.classList.toggle('active',b.dataset.tone===item.tone));
+    selectedTone=item.tone;
     switchTab('generate');
     showToast('✓ 불러왔습니다');
   }
 
   function viewHistory(idx) {
-    const item = getHistory()[idx];
+    const item=getHistory()[idx];
     switchTab('generate');
     showResults(item.result);
   }
 
   function deleteHistory(idx) {
-    const history = getHistory();
-    history.splice(idx, 1);
-    localStorage.setItem('maemulair_history', JSON.stringify(history));
+    const history=getHistory();
+    history.splice(idx,1);
+    localStorage.setItem('maemulair_history',JSON.stringify(history));
     renderHistory();
     showToast('🗑 삭제되었습니다');
   }
 
   function copyText(btn, text) {
-    navigator.clipboard.writeText(text.replace(/\\n/g,'\n')).then(() => {
-      const orig = btn.textContent;
-      btn.textContent = '✓ 복사됨';
+    navigator.clipboard.writeText(text.replace(/\\n/g,'\n')).then(()=>{
+      const orig=btn.textContent;
+      btn.textContent='✓ 복사됨';
       btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+      setTimeout(()=>{btn.textContent=orig;btn.classList.remove('copied');},2000);
     });
   }
 
   function showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
+    const toast=document.getElementById('toast');
+    toast.textContent=msg;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2500);
+    setTimeout(()=>toast.classList.remove('show'),2500);
   }
 </script>
 </body>
