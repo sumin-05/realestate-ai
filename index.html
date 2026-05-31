@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>매물AI — 부동산 설명문 자동 생성기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f0e;
+    --surface: #181a18;
+    --surface2: #1f221f;
+    --border: #2a2e2a;
+    --accent: #b8f060;
+    --accent2: #7ed957;
+    --kakao: #FAE100;
+    --text: #f0f0ec;
+    --text-muted: #7a7d76;
+    --text-dim: #4a4d48;
+    --radius: 14px;
+    --font-serif: 'Noto Serif KR', serif;
+    --font-sans: 'Noto Sans KR', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(184,240,96,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(184,240,96,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  header { padding: 48px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+  .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .logo-mark { width: 36px; height: 36px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: var(--bg); font-family: var(--font-serif); }
+  .logo-text { font-family: var(--font-serif); font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+  .logo-text span { color: var(--accent); }
+  h1 { font-family: var(--font-serif); font-size: clamp(28px, 5vw, 42px); font-weight: 700; line-height: 1.25; letter-spacing: -1px; color: var(--text); margin-bottom: 12px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .subtitle { font-size: 15px; color: var(--text-muted); font-weight: 300; line-height: 1.6; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+  .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-size: 14px; font-family: var(--font-sans); font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .tab-btn.active { background: var(--accent); color: var(--bg); font-weight: 700; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .form-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 24px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  label { font-size: 12px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.5px; }
+  input, select, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-size: 14px; font-family: var(--font-sans); color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s; width: 100%; }
+  input::placeholder, textarea::placeholder { color: var(--text-dim); }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(184,240,96,0.08); }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a7d76' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+  .tone-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tone-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; transition: all 0.2s; font-size: 13px; font-family: var(--font-sans); color: var(--text-muted); }
+  .tone-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tone-btn.active { background: rgba(184,240,96,0.1); border-color: var(--accent); color: var(--accent); font-weight: 500; }
+  .tone-emoji { display: block; font-size: 20px; margin-bottom: 4px; }
+
+  .generate-btn { width: 100%; background: var(--accent); color: var(--bg); border: none; border-radius: var(--radius); padding: 18px 24px; font-size: 16px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; letter-spacing: -0.3px; }
+  .generate-btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(184,240,96,0.2); }
+  .generate-btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .loading { display: none; text-align: center; padding: 48px 0; }
+  .loading.show { display: block; }
+  .loading-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+  .loading-dots span { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s infinite; }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-8px); opacity: 1; } }
+  .loading-text { font-size: 14px; color: var(--text-muted); }
+
+  /* 결과 탭 */
+  .result-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+  .result-tab-btn { padding: 8px 16px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); font-size: 13px; font-family: var(--font-sans); font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .result-tab-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+  .result-tab-btn.kakao-tab.active { background: var(--kakao); color: #1a1a1a; border-color: var(--kakao); }
+
+  .results { display: none; }
+  .results.show { display: block; }
+  .result-content { display: none; }
+  .result-content.active { display: block; }
+
+  .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .result-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; color: var(--text); }
+  .result-badge { background: rgba(184,240,96,0.15); color: var(--accent); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(184,240,96,0.3); }
+
+  .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  .result-card:nth-child(2) { animation-delay: 0.1s; }
+  .result-card:nth-child(3) { animation-delay: 0.2s; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .result-card:hover { border-color: rgba(184,240,96,0.3); }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .card-type { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); text-transform: uppercase; }
+  .copy-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { background: rgba(184,240,96,0.1); border-color: var(--accent); color: var(--accent); }
+  .card-content { font-size: 15px; line-height: 1.8; color: var(--text); font-weight: 300; white-space: pre-wrap; }
+
+  /* 카카오톡 섹션 */
+  .kakao-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  .kakao-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--kakao); text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .kakao-bubble { background: var(--kakao); color: #1a1a1a; border-radius: 0 12px 12px 12px; padding: 16px 18px; font-size: 14px; line-height: 1.8; font-weight: 400; white-space: pre-wrap; margin-bottom: 12px; position: relative; max-width: 80%; }
+  .kakao-bubble::before { content: ''; position: absolute; top: 0; left: -8px; width: 0; height: 0; border-top: 8px solid var(--kakao); border-left: 8px solid transparent; }
+  .kakao-copy-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; font-size: 13px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .kakao-copy-btn:hover { border-color: var(--kakao); color: var(--kakao); }
+  .kakao-copy-btn.copied { background: rgba(250,225,0,0.1); border-color: var(--kakao); color: var(--kakao); }
+
+  /* 히스토리 */
+  .history-empty { text-align: center; padding: 60px 0; color: var(--text-muted); }
+  .history-empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 12px; transition: all 0.2s; }
+  .history-item:hover { border-color: rgba(184,240,96,0.3); }
+  .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .history-location { font-size: 16px; font-weight: 700; color: var(--text); }
+  .history-meta { display: flex; align-items: center; gap: 8px; }
+  .history-tone { background: rgba(184,240,96,0.1); color: var(--accent); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .history-date { font-size: 12px; color: var(--text-dim); }
+  .history-preview { font-size: 13px; color: var(--text-muted); line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .history-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .history-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .history-btn.danger:hover { border-color: #ff5050; color: #ff5050; }
+  .history-count { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+
+  .error-box { display: none; background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.3); border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #ff8080; margin-bottom: 16px; }
+  .error-box.show { display: block; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: var(--bg); padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; opacity: 0; transform: translateY(10px); transition: all 0.3s; z-index: 999; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  footer { text-align: center; padding: 48px 0 32px; font-size: 13px; color: var(--text-dim); border-top: 1px solid var(--border); margin-top: 48px; }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr; }
+    .tone-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-section { padding: 20px; }
+    .kakao-bubble { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-mark">매</div>
+      <div class="logo-text">매물<span>AI</span></div>
+    </div>
+    <h1>설명문은 AI가,<br>중개는 <em>당신이.</em></h1>
+    <p class="subtitle">매물 정보를 입력하면 30초 안에 설명문 + 카카오톡 문자까지 자동 생성합니다.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('generate')">⚡ 설명문 생성</button>
+    <button class="tab-btn" onclick="switchTab('history')">📁 저장된 매물</button>
+  </div>
+
+  <!-- 생성 탭 -->
+  <div class="tab-content active" id="tab-generate">
+    <div class="form-section">
+      <div class="section-label">매물 정보</div>
+      <div class="form-grid" style="margin-bottom:16px">
+        <div class="field"><label>위치</label><input type="text" id="location" placeholder="부산 해운대구 중동" /></div>
+        <div class="field"><label>가격</label><input type="text" id="price" placeholder="5억" /></div>
+      </div>
+      <div class="form-grid three" style="margin-bottom:16px">
+        <div class="field"><label>면적</label><input type="text" id="area" placeholder="84㎡" /></div>
+        <div class="field"><label>층수</label><input type="text" id="floor" placeholder="12층" /></div>
+        <div class="field"><label>방향</label>
+          <select id="direction">
+            <option value="">선택</option>
+            <option>남향</option><option>남동향</option><option>남서향</option>
+            <option>동향</option><option>서향</option><option>북향</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid three" style="margin-bottom:16px">
+        <div class="field"><label>방 수</label><input type="text" id="rooms" placeholder="3" /></div>
+        <div class="field"><label>욕실 수</label><input type="text" id="bathrooms" placeholder="2" /></div>
+        <div class="field"><label>입주가능일</label><input type="text" id="moveIn" placeholder="즉시입주" /></div>
+      </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>특이사항 (장점, 옵션 등)</label>
+        <textarea id="features" placeholder="바다뷰, 풀옵션, 주차 2대, 신축 등"></textarea>
+      </div>
+      <div class="field" style="margin-bottom:24px">
+        <label>고객 이름 (카카오톡 문자용, 선택)</label>
+        <input type="text" id="customerName" placeholder="홍길동 고객님" />
+      </div>
+      <div class="section-label">설명문 톤 선택</div>
+      <div class="tone-grid">
+        <button class="tone-btn active" data-tone="감성적" onclick="selectTone(this)"><span class="tone-emoji">🌸</span>감성적</button>
+        <button class="tone-btn" data-tone="전문적" onclick="selectTone(this)"><span class="tone-emoji">💼</span>전문적</button>
+        <button class="tone-btn" data-tone="젊은층" onclick="selectTone(this)"><span class="tone-emoji">✨</span>젊은층</button>
+        <button class="tone-btn" data-tone="투자자" onclick="selectTone(this)"><span class="tone-emoji">📈</span>투자자</button>
+      </div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+    <button class="generate-btn" onclick="generate()" id="generateBtn">⚡ 설명문 + 카카오톡 문자 자동 생성</button>
+
+    <div class="loading" id="loading">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <div class="loading-text">AI가 설명문과 카카오톡 문자를 작성하고 있습니다...</div>
+    </div>
+
+    <div class="results" id="results" style="margin-top:32px">
+      <div class="result-header">
+        <div class="result-title">생성 완료</div>
+        <div class="result-badge" id="resultBadge">감성적 버전</div>
+      </div>
+
+      <!-- 결과 탭 -->
+      <div class="result-tabs">
+        <button class="result-tab-btn active" onclick="switchResultTab('desc')">📝 설명문</button>
+        <button class="result-tab-btn kakao-tab" onclick="switchResultTab('kakao')">💬 카카오톡 문자</button>
+      </div>
+
+      <!-- 설명문 -->
+      <div class="result-content active" id="result-desc">
+        <div id="resultCards"></div>
+      </div>
+
+      <!-- 카카오톡 -->
+      <div class="result-content" id="result-kakao">
+        <div id="kakaoCards"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 히스토리 탭 -->
+  <div class="tab-content" id="tab-history">
+    <div class="history-count" id="historyCount"></div>
+    <div id="historyList"></div>
+  </div>
+
+  <footer>
+    매물AI — 공인중개사 전용 AI 자동화 서비스<br>
+    문의: <a href="https://open.kakao.com/me/seo1091302">카카오톡</a> · 010-5737-8284
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let selectedTone = '감성적';
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0 && tab === 'generate') || (i === 1 && tab === 'history'));
+    });
+    document.getElementById('tab-generate').classList.toggle('active', tab === 'generate');
+    document.getElementById('tab-history').classList.toggle('active', tab === 'history');
+    if (tab === 'history') renderHistory();
+  }
+
+  function switchResultTab(tab) {
+    document.querySelectorAll('.result-tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0 && tab === 'desc') || (i === 1 && tab === 'kakao'));
+    });
+    document.getElementById('result-desc').classList.toggle('active', tab === 'desc');
+    document.getElementById('result-kakao').classList.toggle('active', tab === 'kakao');
+  }
+
+  function selectTone(btn) {
+    document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTone = btn.dataset.tone;
+  }
+
+  async function generate() {
+    const location = document.getElementById('location').value.trim();
+    const price = document.getElementById('price').value.trim();
+    const area = document.getElementById('area').value.trim();
+    const floor = document.getElementById('floor').value.trim();
+    const direction = document.getElementById('direction').value;
+    const rooms = document.getElementById('rooms').value.trim();
+    const bathrooms = document.getElementById('bathrooms').value.trim();
+    const moveIn = document.getElementById('moveIn').value.trim();
+    const features = document.getElementById('features').value.trim();
+    const customerName = document.getElementById('customerName').value.trim();
+
+    const errorBox = document.getElementById('errorBox');
+    errorBox.classList.remove('show');
+
+    if (!location || !price) {
+      errorBox.textContent = '위치와 가격은 필수 입력 항목입니다.';
+      errorBox.classList.add('show');
+      return;
+    }
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    document.getElementById('loading').classList.add('show');
+    document.getElementById('results').classList.remove('show');
+
+    const prompt = `당신은 10년 경력의 전문 부동산 공인중개사입니다.
+아래 매물 정보를 바탕으로 두 가지를 작성해주세요.
+
+[매물 정보]
+- 위치: ${location}
+- 가격: ${price}
+- 면적: ${area || '미입력'}
+- 층수: ${floor || '미입력'}
+- 방향: ${direction || '미입력'}
+- 방/욕실: ${rooms || '미입력'}룸 ${bathrooms || '미입력'}욕실
+- 입주가능일: ${moveIn || '협의'}
+- 특이사항: ${features || '없음'}
+- 작성 톤: ${selectedTone}
+- 고객 이름: ${customerName || '고객님'}
+
+[A. 네이버 부동산 설명문 - 3가지 버전]
+
+###짧은버전###
+(100자 내외, 핵심만 임팩트 있게)
+###끝###
+
+###표준버전###
+(300자 내외, 장점 강조, 자연스럽게)
+###끝###
+
+###블로그버전###
+(600자 내외, 스토리텔링, 감성적으로)
+###끝###
+
+[B. 카카오톡 문자 - 3가지 상황별]
+
+###카카오첫연락###
+(처음 문의한 고객에게 보내는 매물 안내 문자, 150자 내외, 친근하고 간결하게)
+###끝###
+
+###카카오임장후###
+(임장 후 고객에게 보내는 감사 + 매물 정리 문자, 200자 내외)
+###끝###
+
+###카카오팔로업###
+(며칠 후 연락이 없는 고객에게 보내는 팔로업 문자, 100자 내외, 부담없이)
+###끝###`;
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'API 오류');
+
+      showResults(data.result);
+      saveToHistory({
+        id: Date.now(),
+        location, price, area, floor, direction, rooms, bathrooms, moveIn, features, customerName,
+        tone: selectedTone,
+        result: data.result,
+        date: new Date().toLocaleDateString('ko-KR')
+      });
+      showToast('✓ 저장 완료');
+
+    } catch (err) {
+      errorBox.textContent = '오류: ' + err.message;
+      errorBox.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      document.getElementById('loading').classList.remove('show');
+    }
+  }
+
+  function showResults(text) {
+    // 설명문
+    const descTypes = [
+      { key: '짧은버전', label: '짧은 버전 (100자)', tag: 'SHORT' },
+      { key: '표준버전', label: '표준 버전 (300자)', tag: 'STANDARD' },
+      { key: '블로그버전', label: '블로그용 버전 (600자)', tag: 'BLOG' }
+    ];
+    const cards = document.getElementById('resultCards');
+    cards.innerHTML = '';
+    descTypes.forEach(t => {
+      const regex = new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`);
+      const match = text.match(regex);
+      const content = match ? match[1].trim() : '생성 오류';
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-type">${t.tag} — ${t.label}</div>
+          <button class="copy-btn" onclick="copyText(this, \`${content.replace(/`/g,'\\`').replace(/\n/g,'\\n')}\`)">복사</button>
+        </div>
+        <div class="card-content">${content}</div>`;
+      cards.appendChild(card);
+    });
+
+    // 카카오톡
+    const kakaoTypes = [
+      { key: '카카오첫연락', label: '첫 연락 문자', icon: '👋' },
+      { key: '카카오임장후', label: '임장 후 감사 문자', icon: '🏠' },
+      { key: '카카오팔로업', label: '팔로업 문자', icon: '📱' }
+    ];
+    const kakaoCards = document.getElementById('kakaoCards');
+    kakaoCards.innerHTML = '';
+    kakaoTypes.forEach((t, i) => {
+      const regex = new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`);
+      const match = text.match(regex);
+      const content = match ? match[1].trim() : '생성 오류';
+      const div = document.createElement('div');
+      div.className = 'kakao-section';
+      div.style.animationDelay = (i * 0.1) + 's';
+      div.innerHTML = `
+        <div class="kakao-label">${t.icon} ${t.label}</div>
+        <div class="kakao-bubble">${content}</div>
+        <button class="kakao-copy-btn" onclick="copyText(this, \`${content.replace(/`/g,'\\`').replace(/\n/g,'\\n')}\`)">💬 복사하기</button>`;
+      kakaoCards.appendChild(div);
+    });
+
+    document.getElementById('resultBadge').textContent = selectedTone + ' 버전';
+    document.getElementById('results').classList.add('show');
+    switchResultTab('desc');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function saveToHistory(item) {
+    const history = getHistory();
+    history.unshift(item);
+    if (history.length > 50) history.pop();
+    localStorage.setItem('maemulair_history', JSON.stringify(history));
+  }
+
+  function getHistory() {
+    try { return JSON.parse(localStorage.getItem('maemulair_history') || '[]'); } catch { return []; }
+  }
+
+  function renderHistory() {
+    const history = getHistory();
+    const list = document.getElementById('historyList');
+    const count = document.getElementById('historyCount');
+    if (history.length === 0) {
+      count.textContent = '';
+      list.innerHTML = `<div class="history-empty"><div class="history-empty-icon">📭</div><div>아직 저장된 매물이 없습니다.</div><div style="font-size:13px;margin-top:8px;color:var(--text-dim)">설명문을 생성하면 자동으로 저장됩니다.</div></div>`;
+      return;
+    }
+    count.textContent = `총 ${history.length}개의 매물`;
+    list.innerHTML = '';
+    history.forEach((item, idx) => {
+      const preview = item.result ? item.result.replace(/###[^#]+###/g,'').replace(/\n/g,' ').trim().slice(0,80)+'...' : '';
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `
+        <div class="history-header">
+          <div class="history-location">${item.location} · ${item.price}</div>
+          <div class="history-meta">
+            <span class="history-tone">${item.tone}</span>
+            <span class="history-date">${item.date}</span>
+          </div>
+        </div>
+        <div class="history-preview">${preview}</div>
+        <div class="history-actions">
+          <button class="history-btn" onclick="loadHistory(${idx})">📋 불러오기</button>
+          <button class="history-btn" onclick="viewHistory(${idx})">👁 보기</button>
+          <button class="history-btn danger" onclick="deleteHistory(${idx})">🗑 삭제</button>
+        </div>`;
+      list.appendChild(div);
+    });
+  }
+
+  function loadHistory(idx) {
+    const item = getHistory()[idx];
+    document.getElementById('location').value = item.location || '';
+    document.getElementById('price').value = item.price || '';
+    document.getElementById('area').value = item.area || '';
+    document.getElementById('floor').value = item.floor || '';
+    document.getElementById('direction').value = item.direction || '';
+    document.getElementById('rooms').value = item.rooms || '';
+    document.getElementById('bathrooms').value = item.bathrooms || '';
+    document.getElementById('moveIn').value = item.moveIn || '';
+    document.getElementById('features').value = item.features || '';
+    document.getElementById('customerName').value = item.customerName || '';
+    document.querySelectorAll('.tone-btn').forEach(b => b.classList.toggle('active', b.dataset.tone === item.tone));
+    selectedTone = item.tone;
+    switchTab('generate');
+    showToast('✓ 불러왔습니다');
+  }
+
+  function viewHistory(idx) {
+    const item = getHistory()[idx];
+    switchTab('generate');
+    showResults(item.result);
+  }
+
+  function deleteHistory(idx) {
+    const history = getHistory();
+    history.splice(idx, 1);
+    localStorage.setItem('maemulair_history', JSON.stringify(history));
+    renderHistory();
+    showToast('🗑 삭제되었습니다');
+  }
+
+  function copyText(btn, text) {
+    navigator.clipboard.writeText(text.replace(/\\n/g,'\n')).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ 복사됨';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
