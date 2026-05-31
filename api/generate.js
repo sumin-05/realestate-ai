@@ -13,8 +13,14 @@ export default async function handler(req, res) {
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
+      max_tokens: 3000,
+      messages: [
+        {
+          role: 'system',
+          content: '당신은 전문 부동산 공인중개사입니다. 반드시 지정된 출력 형식을 정확히 따라야 합니다. ###태그명### 형식을 절대 바꾸지 마세요.'
+        },
+        { role: 'user', content: prompt }
+      ]
     })
   });
 
