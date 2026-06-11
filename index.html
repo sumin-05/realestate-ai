@@ -41,8 +41,6 @@
   select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a7d76' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
   select option { background: var(--surface2); }
   textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
-
-  /* 주소 검색 */
   .address-row { display: flex; gap: 10px; align-items: flex-end; }
   .address-row input { flex: 1; }
   .address-search-btn { background: var(--accent); color: var(--bg); border: none; border-radius: 8px; padding: 12px 16px; font-size: 13px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
@@ -50,8 +48,6 @@
   .address-search-btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
   .address-info { background: rgba(184,240,96,0.06); border: 1px solid rgba(184,240,96,0.2); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--accent); margin-top: 8px; display: none; }
   .address-info.show { display: block; }
-
-  /* 타깃 프리셋 */
   .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
   .preset-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.2s; font-family: var(--font-sans); }
   .preset-btn:hover { border-color: var(--accent); }
@@ -62,13 +58,10 @@
   .preset-btn.active .preset-name { color: var(--accent); }
   .custom-preset { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 8px; display: none; }
   .custom-preset.show { display: block; }
-
-  /* 저장된 프리셋 */
   .saved-presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
   .saved-preset-tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
   .saved-preset-tag:hover { border-color: var(--accent); color: var(--accent); }
   .saved-preset-tag .del { color: var(--text-dim); font-size: 10px; }
-
   .tone-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
   .tone-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; transition: all 0.2s; font-size: 13px; font-family: var(--font-sans); color: var(--text-muted); }
   .tone-btn:hover { border-color: var(--accent); color: var(--text); }
@@ -183,8 +176,6 @@
   </div>
 
   <div class="tab-content active" id="tab-generate">
-
-    <!-- 주소 자동 조회 -->
     <div class="form-section">
       <div class="section-label">📍 주소로 건물 정보 자동 조회</div>
       <div class="address-row">
@@ -194,7 +185,6 @@
       <div class="address-info" id="addressInfo"></div>
     </div>
 
-    <!-- 타깃 프리셋 -->
     <div class="form-section">
       <div class="section-label">🎯 타깃 고객 선택</div>
       <div id="savedPresetsArea" style="margin-bottom:12px"></div>
@@ -243,7 +233,6 @@
       </div>
     </div>
 
-    <!-- 매물 정보 -->
     <div class="form-section">
       <div class="section-label">매물 정보</div>
       <div class="form-grid" style="margin-bottom:16px">
@@ -313,13 +302,11 @@
     </div>
   </div>
 
-  <!-- 히스토리 탭 -->
   <div class="tab-content" id="tab-history">
     <div class="history-count" id="historyCount"></div>
     <div id="historyList"></div>
   </div>
 
-  <!-- 프리셋 탭 -->
   <div class="tab-content" id="tab-presets">
     <div class="form-section">
       <div class="section-label">⭐ 저장된 커스텀 프리셋</div>
@@ -389,41 +376,22 @@
       });
       const data = await res.json();
 
-     if(data.found) {
-  const locationValue = data.buildingName
-    ? data.location + ' (' + data.buildingName + ')'
-    : data.location;
-  document.getElementById('location').value = locationValue;
-
-  info.innerHTML = '✅ <strong>주소 조회 완료!</strong><br>' +
-    '📍 도로명: <strong>' + data.location + '</strong>' +
-    (data.buildingName ? '<br>🏢 건물명: <strong>' + data.buildingName + '</strong>' : '') +
-    (data.jibun ? ' &nbsp;📌 지번: <strong>' + data.jibun + '</strong>' : '');
-  showToast('✓ 주소 자동 입력 완료');
-} else {
-  document.getElementById('location').value = address;
-  info.innerHTML = '✅ 주소 입력 완료. 상세 정보는 직접 입력해주세요.';
-  showToast('✓ 주소 입력됨');
-}
-fetch('https://hook.us2.make.com/k60cov82nh6mpnlsgli3m2w5eksittdw', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    location, price, area, floor, direction,
-    rooms, bathrooms, moveIn, features, nearby,
-    customerName, tone: selectedTone,
-    preset: preset.name,
-    result: data.result,
-    date: new Date().toLocaleDateString('ko-KR')
-  })
-}).catch(()=>{}); // 실패해도 웹앱 동작에 영향 없음
-
+      if(data.found) {
+        const locationValue = data.buildingName
+          ? data.location + ' (' + data.buildingName + ')'
+          : data.location;
+        document.getElementById('location').value = locationValue;
+        info.innerHTML = '✅ <strong>주소 조회 완료!</strong><br>' +
+          '📍 도로명: <strong>' + data.location + '</strong>' +
+          (data.buildingName ? '<br>🏢 건물명: <strong>' + data.buildingName + '</strong>' : '') +
+          (data.jibun ? ' &nbsp;📌 지번: <strong>' + data.jibun + '</strong>' : '');
+        showToast('✓ 주소 자동 입력 완료');
       } else {
-      document.getElementById('location').value = address;
-      info.innerHTML = '✅ 주소 입력 완료. 상세 정보는 직접 입력해주세요.';
-      showToast('✓ 주소 입력됨');
-    }
-    info.classList.add('show');
+        document.getElementById('location').value = address;
+        info.innerHTML = '✅ 주소 입력 완료. 상세 정보는 직접 입력해주세요.';
+        showToast('✓ 주소 입력됨');
+      }
+      info.classList.add('show');
 
     } catch(e) {
       document.getElementById('location').value = address;
@@ -627,6 +595,21 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
       const data=await response.json();
       if(!response.ok) throw new Error(data.error||'API 오류');
       showResults(data.result, preset);
+
+      // Make.com Webhook 호출 (생성 완료 후)
+      fetch('https://hook.us2.make.com/k60cov82nh6mpnlsgli3m2w5eksittdw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location, price, area, floor, direction,
+          rooms, bathrooms, moveIn, features, nearby,
+          customerName, tone: selectedTone,
+          preset: preset.name,
+          result: data.result,
+          date: new Date().toLocaleDateString('ko-KR')
+        })
+      }).catch(()=>{});
+
       saveToHistory({id:Date.now(),location,price,area,floor,direction,rooms,bathrooms,moveIn,features,nearby,customerName,tone:selectedTone,preset:preset.name,result:data.result,date:new Date().toLocaleDateString('ko-KR')});
       showToast('✓ 저장 완료');
     } catch(err) {
@@ -709,14 +692,14 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
     const history=getHistory();
     const list=document.getElementById('historyList');
     const count=document.getElementById('historyCount');
-    if(history.length===0){count.textContent='';list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📭</div><div>아직 저장된 매물이 없습니다.</div></div>`;return;}
-    count.textContent=`총 ${history.length}개의 매물`;
+    if(history.length===0){count.textContent='';list.innerHTML='<div class="history-empty"><div class="history-empty-icon">📭</div><div>아직 저장된 매물이 없습니다.</div></div>';return;}
+    count.textContent='총 '+history.length+'개의 매물';
     list.innerHTML='';
     history.forEach((item,idx)=>{
       const preview=item.result?item.result.replace(/###[^#]+###/g,'').replace(/\n/g,' ').trim().slice(0,80)+'...':'';
       const div=document.createElement('div');
       div.className='history-item';
-      div.innerHTML=`<div class="history-header"><div class="history-location">${item.location} · ${item.price}</div><div class="history-meta"><span class="history-tone">${item.preset||item.tone}</span><span class="history-date">${item.date}</span></div></div><div class="history-preview">${preview}</div><div class="history-actions"><button class="history-btn" onclick="loadHistory(${idx})">📋 불러오기</button><button class="history-btn" onclick="viewHistory(${idx})">👁 보기</button><button class="history-btn danger" onclick="deleteHistory(${idx})">🗑 삭제</button></div>`;
+      div.innerHTML='<div class="history-header"><div class="history-location">'+item.location+' · '+item.price+'</div><div class="history-meta"><span class="history-tone">'+(item.preset||item.tone)+'</span><span class="history-date">'+item.date+'</span></div></div><div class="history-preview">'+preview+'</div><div class="history-actions"><button class="history-btn" onclick="loadHistory('+idx+')">📋 불러오기</button><button class="history-btn" onclick="viewHistory('+idx+')">👁 보기</button><button class="history-btn danger" onclick="deleteHistory('+idx+')">🗑 삭제</button></div>';
       list.appendChild(div);
     });
   }
@@ -742,7 +725,6 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
 
   function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
-  // 초기화
   renderSavedPresets();
 </script>
 </body>
