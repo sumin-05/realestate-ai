@@ -389,18 +389,22 @@
       });
       const data = await res.json();
 
-      if(data.found) {
-        const locationValue = data.buildingName
-          ? data.location + ' (' + data.buildingName + ')'
-          : data.location;
-        document.getElementById('location').value = locationValue;
+     if(data.found) {
+  const locationValue = data.buildingName
+    ? data.location + ' (' + data.buildingName + ')'
+    : data.location;
+  document.getElementById('location').value = locationValue;
 
-        info.innerHTML = '✅ <strong>주소 조회 완료!</strong><br>' +
-          '📍 도로명: <strong>' + data.location + '</strong><br>' +
-          '🏢 건물명: <strong>' + (data.buildingName || '없음') + '</strong> &nbsp;' +
-          '📌 지번: <strong>' + (data.jibun || '미확인') + '</strong>';
-        showToast('✓ 주소 자동 입력 완료');
-        // Make.com Webhook 호출
+  info.innerHTML = '✅ <strong>주소 조회 완료!</strong><br>' +
+    '📍 도로명: <strong>' + data.location + '</strong>' +
+    (data.buildingName ? '<br>🏢 건물명: <strong>' + data.buildingName + '</strong>' : '') +
+    (data.jibun ? ' &nbsp;📌 지번: <strong>' + data.jibun + '</strong>' : '');
+  showToast('✓ 주소 자동 입력 완료');
+} else {
+  document.getElementById('location').value = address;
+  info.innerHTML = '✅ 주소 입력 완료. 상세 정보는 직접 입력해주세요.';
+  showToast('✓ 주소 입력됨');
+}
 fetch('https://hook.us2.make.com/k60cov82nh6mpnlsgli3m2w5eksittdw', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
