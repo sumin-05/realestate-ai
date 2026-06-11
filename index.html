@@ -419,15 +419,15 @@ fetch('https://hook.us2.make.com/k60cov82nh6mpnlsgli3m2w5eksittdw', {
 }).catch(()=>{}); // 실패해도 웹앱 동작에 영향 없음
 
       } else {
-        document.getElementById('location').value = address;
-        info.innerHTML = '✅ 주소 입력 완료. 상세 정보는 직접 입력해주세요.';
-        showToast('✓ 주소 입력됨');
-      }
-      info.classList.add('show');
+      document.getElementById('location').value = address;
+      info.innerHTML = '✅ 주소 입력 완료. 상세 정보는 직접 입력해주세요.';
+      showToast('✓ 주소 입력됨');
+    }
+    info.classList.add('show');
 
     } catch(e) {
       document.getElementById('location').value = address;
-      info.innerHTML = `✅ 위치 필드에 입력됐습니다.`;
+      info.innerHTML = '✅ 위치 필드에 입력됐습니다.';
       info.classList.add('show');
     } finally {
       btn.disabled = false;
