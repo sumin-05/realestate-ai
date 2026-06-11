@@ -400,6 +400,20 @@
           '🏢 건물명: <strong>' + (data.buildingName || '없음') + '</strong> &nbsp;' +
           '📌 지번: <strong>' + (data.jibun || '미확인') + '</strong>';
         showToast('✓ 주소 자동 입력 완료');
+        // Make.com Webhook 호출
+fetch('https://hook.us2.make.com/k60cov82nh6mpnlsgli3m2w5eksittdw', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    location, price, area, floor, direction,
+    rooms, bathrooms, moveIn, features, nearby,
+    customerName, tone: selectedTone,
+    preset: preset.name,
+    result: data.result,
+    date: new Date().toLocaleDateString('ko-KR')
+  })
+}).catch(()=>{}); // 실패해도 웹앱 동작에 영향 없음
+
       } else {
         document.getElementById('location').value = address;
         info.innerHTML = '✅ 주소 입력 완료. 상세 정보는 직접 입력해주세요.';
