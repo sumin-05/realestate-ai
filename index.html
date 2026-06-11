@@ -48,6 +48,9 @@
   .address-search-btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
   .address-info { background: rgba(184,240,96,0.06); border: 1px solid rgba(184,240,96,0.2); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--accent); margin-top: 8px; display: none; }
   .address-info.show { display: block; }
+  .map-wrap { margin-top: 12px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(184,240,96,0.2); display: none; }
+  .map-wrap.show { display: block; }
+  #kakaoMap { width: 100%; height: 200px; }
   .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
   .preset-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.2s; font-family: var(--font-sans); }
   .preset-btn:hover { border-color: var(--accent); }
@@ -157,6 +160,7 @@
   footer a { color: var(--accent); text-decoration: none; }
   @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}}
 </style>
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ee247b165445b62c6b509f94f80091f3&libraries=services"></script>
 </head>
 <body>
 <div class="container">
@@ -183,6 +187,9 @@
         <button class="address-search-btn" onclick="searchAddress()" id="addressBtn">🔍 자동 조회</button>
       </div>
       <div class="address-info" id="addressInfo"></div>
+      <div class="map-wrap" id="mapWrap">
+        <div id="kakaoMap"></div>
+      </div>
     </div>
 
     <div class="form-section">
@@ -386,6 +393,7 @@
           (data.buildingName ? '<br>🏢 건물명: <strong>' + data.buildingName + '</strong>' : '') +
           (data.jibun ? ' &nbsp;📌 지번: <strong>' + data.jibun + '</strong>' : '');
         showToast('✓ 주소 자동 입력 완료');
+        showMap(data.location);
       } else {
         document.getElementById('location').value = address;
         info.innerHTML = '✅ 주소 입력 완료. 상세 정보는 직접 입력해주세요.';
@@ -724,6 +732,26 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
   }
 
   function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+  function showMap(location) {
+    const mapWrap = document.getElementById('mapWrap');
+    mapWrap.classList.remove('show');
+    const geocoder = new kakao.maps.services.Geocoder();
+    geocoder.addressSearch(location, function(result, status) {
+      if(status === kakao.maps.services.Status.OK) {
+        const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+        mapWrap.classList.add('show');
+        const map = new kakao.maps.Map(document.getElementById('kakaoMap'), {
+          center: coords, level: 3
+        });
+        const marker = new kakao.maps.Marker({ map, position: coords });
+        const infowindow = new kakao.maps.InfoWindow({
+          content: '<div style="padding:6px 10px;font-size:12px;font-weight:700;color:#111;white-space:nowrap">' + location + '</div>'
+        });
+        infowindow.open(map, marker);
+      }
+    });
+  }
 
   renderSavedPresets();
 </script>
