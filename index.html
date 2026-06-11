@@ -160,7 +160,6 @@
   footer a { color: var(--accent); text-decoration: none; }
   @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}}
 </style>
-<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ee247b165445b62c6b509f94f80091f3&libraries=services&autoload=false"></script>
 </head>
 <body>
 <div class="container">
@@ -188,7 +187,7 @@
       </div>
       <div class="address-info" id="addressInfo"></div>
       <div class="map-wrap" id="mapWrap">
-        <div id="kakaoMap"></div>
+        <iframe id="googleMap" width="100%" height="200" frameborder="0" style="border:0" allowfullscreen></iframe>
       </div>
     </div>
 
@@ -735,24 +734,10 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
 
   function showMap(location) {
     const mapWrap = document.getElementById('mapWrap');
-    mapWrap.classList.remove('show');
-    kakao.maps.load(function() {
-      const geocoder = new kakao.maps.services.Geocoder();
-      geocoder.addressSearch(location, function(result, status) {
-        if(status === kakao.maps.services.Status.OK) {
-          const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
-          mapWrap.classList.add('show');
-          const map = new kakao.maps.Map(document.getElementById('kakaoMap'), {
-            center: coords, level: 3
-          });
-          const marker = new kakao.maps.Marker({ map, position: coords });
-          const infowindow = new kakao.maps.InfoWindow({
-            content: '<div style="padding:6px 10px;font-size:12px;font-weight:700;color:#111;white-space:nowrap">' + location + '</div>'
-          });
-          infowindow.open(map, marker);
-        }
-      });
-    });
+    const iframe = document.getElementById('googleMap');
+    const query = encodeURIComponent(location);
+    iframe.src = 'https://maps.google.com/maps?q=' + query + '&output=embed&hl=ko&zoom=16';
+    mapWrap.classList.add('show');
   }
 
   renderSavedPresets();
