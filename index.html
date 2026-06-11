@@ -41,6 +41,34 @@
   select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a7d76' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
   select option { background: var(--surface2); }
   textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+  /* 주소 검색 */
+  .address-row { display: flex; gap: 10px; align-items: flex-end; }
+  .address-row input { flex: 1; }
+  .address-search-btn { background: var(--accent); color: var(--bg); border: none; border-radius: 8px; padding: 12px 16px; font-size: 13px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .address-search-btn:hover { background: var(--accent2); }
+  .address-search-btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  .address-info { background: rgba(184,240,96,0.06); border: 1px solid rgba(184,240,96,0.2); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--accent); margin-top: 8px; display: none; }
+  .address-info.show { display: block; }
+
+  /* 타깃 프리셋 */
+  .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .preset-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.2s; font-family: var(--font-sans); }
+  .preset-btn:hover { border-color: var(--accent); }
+  .preset-btn.active { background: rgba(184,240,96,0.1); border-color: var(--accent); }
+  .preset-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+  .preset-name { font-size: 13px; font-weight: 700; color: var(--text); display: block; margin-bottom: 3px; }
+  .preset-desc { font-size: 11px; color: var(--text-muted); display: block; line-height: 1.4; }
+  .preset-btn.active .preset-name { color: var(--accent); }
+  .custom-preset { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 8px; display: none; }
+  .custom-preset.show { display: block; }
+
+  /* 저장된 프리셋 */
+  .saved-presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .saved-preset-tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .saved-preset-tag:hover { border-color: var(--accent); color: var(--accent); }
+  .saved-preset-tag .del { color: var(--text-dim); font-size: 10px; }
+
   .tone-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
   .tone-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; transition: all 0.2s; font-size: 13px; font-family: var(--font-sans); color: var(--text-muted); }
   .tone-btn:hover { border-color: var(--accent); color: var(--text); }
@@ -53,9 +81,8 @@
   .loading.show { display: block; }
   .loading-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
   .loading-dots span { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s infinite; }
-  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-8px);opacity:1} }
+  .loading-dots span:nth-child(2){animation-delay:0.2s} .loading-dots span:nth-child(3){animation-delay:0.4s}
+  @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-8px);opacity:1}}
   .loading-text { font-size: 14px; color: var(--text-muted); }
   .result-tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
   .result-tab-btn { padding: 8px 14px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); font-size: 12px; font-family: var(--font-sans); font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
@@ -88,32 +115,24 @@
   .char-count { font-weight: 700; }
   .char-count.ok{color:var(--naver)} .char-count.warn{color:#FAC775} .char-count.over{color:#ff5050}
   .char-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
-  .char-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+  .char-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
   .naver-content { font-size: 14px; line-height: 1.8; color: var(--text); font-weight: 300; white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
   .naver-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .naver-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 7px 14px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
   .naver-btn:hover { border-color: var(--naver); color: var(--naver); }
   .naver-btn.copy-green { border-color: var(--accent); color: var(--accent); }
-  .naver-btn.copied { background: rgba(184,240,96,0.1); }
   .limit-badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; }
   .limit-badge.ok{background:rgba(3,199,90,0.15);color:var(--naver)} .limit-badge.over{background:rgba(255,80,80,0.15);color:#ff5050}
-
-  /* 블로그 섹션 */
   .blog-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
   .blog-card:hover { border-color: rgba(0,180,216,0.3); }
   .blog-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--blog); text-transform: uppercase; margin-bottom: 16px; }
   .blog-tip { background: rgba(0,180,216,0.08); border: 1px solid rgba(0,180,216,0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--blog); margin-bottom: 16px; line-height: 1.6; }
   .blog-content { font-size: 14px; line-height: 2; color: var(--text); font-weight: 300; white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 12px; max-height: 400px; overflow-y: auto; }
-  .blog-content::-webkit-scrollbar { width: 4px; }
-  .blog-content::-webkit-scrollbar-track { background: var(--surface2); }
-  .blog-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .blog-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .blog-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
   .blog-btn:hover { border-color: var(--blog); color: var(--blog); }
   .blog-btn.primary { border-color: var(--accent); color: var(--accent); }
-  .blog-btn.copied { background: rgba(184,240,96,0.1); border-color: var(--accent); color: var(--accent); }
-  .blog-char { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
-
+  .blog-btn.copied { background: rgba(184,240,96,0.1); }
   .kakao-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
   .kakao-section:nth-child(2){animation-delay:0.1s} .kakao-section:nth-child(3){animation-delay:0.2s}
   .kakao-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--kakao); text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -143,7 +162,7 @@
   .toast.show { opacity: 1; transform: translateY(0); }
   footer { text-align: center; padding: 48px 0 32px; font-size: 13px; color: var(--text-dim); border-top: 1px solid var(--border); margin-top: 48px; }
   footer a { color: var(--accent); text-decoration: none; }
-  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}}
 </style>
 </head>
 <body>
@@ -154,15 +173,77 @@
       <div class="logo-text">매물<span>AI</span></div>
     </div>
     <h1>설명문은 AI가,<br>중개는 <em>당신이.</em></h1>
-    <p class="subtitle">설명문 · 네이버 부동산 · 블로그 포스팅 · 카카오톡 문자 한 번에 자동 생성</p>
+    <p class="subtitle">주소 입력 → 건물 정보 자동 조회 → 타깃별 맞춤 설명문 + 블로그 + 카카오톡 한 번에</p>
   </header>
 
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('generate')">⚡ 생성</button>
     <button class="tab-btn" onclick="switchTab('history')">📁 저장된 매물</button>
+    <button class="tab-btn" onclick="switchTab('presets')">⭐ 내 프리셋</button>
   </div>
 
   <div class="tab-content active" id="tab-generate">
+
+    <!-- 주소 자동 조회 -->
+    <div class="form-section">
+      <div class="section-label">📍 주소로 건물 정보 자동 조회</div>
+      <div class="address-row">
+        <input type="text" id="addressInput" placeholder="도로명 주소 입력 (예: 부산 해운대구 해운대해변로 264)" />
+        <button class="address-search-btn" onclick="searchAddress()" id="addressBtn">🔍 자동 조회</button>
+      </div>
+      <div class="address-info" id="addressInfo"></div>
+    </div>
+
+    <!-- 타깃 프리셋 -->
+    <div class="form-section">
+      <div class="section-label">🎯 타깃 고객 선택</div>
+      <div id="savedPresetsArea" style="margin-bottom:12px"></div>
+      <div class="preset-grid">
+        <button class="preset-btn active" data-preset="family" onclick="selectPreset(this)">
+          <span class="preset-icon">🏠</span>
+          <span class="preset-name">실거주 가족</span>
+          <span class="preset-desc">학군·공간·안전 강조</span>
+        </button>
+        <button class="preset-btn" data-preset="newlywed" onclick="selectPreset(this)">
+          <span class="preset-icon">💍</span>
+          <span class="preset-name">신혼부부</span>
+          <span class="preset-desc">감성·인테리어·교통</span>
+        </button>
+        <button class="preset-btn" data-preset="single" onclick="selectPreset(this)">
+          <span class="preset-icon">👤</span>
+          <span class="preset-name">1인 가구</span>
+          <span class="preset-desc">교통·편의·가성비</span>
+        </button>
+        <button class="preset-btn" data-preset="investor" onclick="selectPreset(this)">
+          <span class="preset-icon">📈</span>
+          <span class="preset-name">투자자</span>
+          <span class="preset-desc">수익률·입지·시세</span>
+        </button>
+        <button class="preset-btn" data-preset="retiree" onclick="selectPreset(this)">
+          <span class="preset-icon">👴</span>
+          <span class="preset-name">은퇴 부부</span>
+          <span class="preset-desc">조용함·자연·편의</span>
+        </button>
+        <button class="preset-btn" data-preset="custom" onclick="selectPreset(this)">
+          <span class="preset-icon">✏️</span>
+          <span class="preset-name">커스텀</span>
+          <span class="preset-desc">직접 입력</span>
+        </button>
+      </div>
+      <div class="custom-preset" id="customPresetArea">
+        <div class="field" style="margin-bottom:10px">
+          <label>타깃 설명 (예: 반려동물 키우는 30대 부부)</label>
+          <input type="text" id="customTarget" placeholder="타깃 고객을 직접 입력하세요" />
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>강조할 포인트 (예: 반려동물 출입 가능, 넓은 마당)</label>
+          <input type="text" id="customEmphasis" placeholder="이 타깃에게 강조할 내용" />
+        </div>
+        <button style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:var(--font-sans)" onclick="saveCustomPreset()">⭐ 이 프리셋 저장</button>
+      </div>
+    </div>
+
+    <!-- 매물 정보 -->
     <div class="form-section">
       <div class="section-label">매물 정보</div>
       <div class="form-grid" style="margin-bottom:16px">
@@ -207,11 +288,11 @@
     </div>
 
     <div class="error-box" id="errorBox"></div>
-    <button class="generate-btn" onclick="generate()" id="generateBtn">⚡ 전체 자동 생성 (설명문 + 블로그 + 카카오톡)</button>
+    <button class="generate-btn" onclick="generate()" id="generateBtn">⚡ 전체 자동 생성</button>
 
     <div class="loading" id="loading">
       <div class="loading-dots"><span></span><span></span><span></span></div>
-      <div class="loading-text">AI가 모든 콘텐츠를 작성하고 있습니다... (약 20~30초)</div>
+      <div class="loading-text">AI가 타깃 맞춤 콘텐츠를 작성하고 있습니다... (약 20~30초)</div>
     </div>
 
     <div class="results" id="results" style="margin-top:32px">
@@ -222,7 +303,7 @@
       <div class="result-tabs">
         <button class="result-tab-btn active" onclick="switchResultTab('desc')">📝 설명문</button>
         <button class="result-tab-btn naver-tab" onclick="switchResultTab('naver')">🟢 네이버 부동산</button>
-        <button class="result-tab-btn blog-tab" onclick="switchResultTab('blog')">📰 네이버 블로그</button>
+        <button class="result-tab-btn blog-tab" onclick="switchResultTab('blog')">📰 블로그</button>
         <button class="result-tab-btn kakao-tab" onclick="switchResultTab('kakao')">💬 카카오톡</button>
       </div>
       <div class="result-content active" id="result-desc"><div id="resultCards"></div></div>
@@ -232,9 +313,18 @@
     </div>
   </div>
 
+  <!-- 히스토리 탭 -->
   <div class="tab-content" id="tab-history">
     <div class="history-count" id="historyCount"></div>
     <div id="historyList"></div>
+  </div>
+
+  <!-- 프리셋 탭 -->
+  <div class="tab-content" id="tab-presets">
+    <div class="form-section">
+      <div class="section-label">⭐ 저장된 커스텀 프리셋</div>
+      <div id="presetList"></div>
+    </div>
   </div>
 
   <footer>
@@ -242,17 +332,26 @@
     문의: <a href="https://open.kakao.com/me/seo1091302">카카오톡</a> · 010-5737-8284
   </footer>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
   let selectedTone = '감성적';
+  let selectedPreset = 'family';
+
+  const PRESETS = {
+    family: { name: '실거주 가족', target: '30~40대 실거주 가족', emphasis: '학군, 넓은 공간, 안전한 환경, 주차, 커뮤니티' },
+    newlywed: { name: '신혼부부', target: '20~30대 신혼부부', emphasis: '감성적인 인테리어, 교통 편의성, 카페·맛집 접근성' },
+    single: { name: '1인 가구', target: '20~30대 1인 가구', emphasis: '교통, 편의시설 근접성, 가성비, 보안' },
+    investor: { name: '투자자', target: '부동산 투자자', emphasis: '임대 수익률, 입지, 시세 상승 가능성, 공실률' },
+    retiree: { name: '은퇴 부부', target: '50~60대 은퇴 부부', emphasis: '조용한 환경, 자연 근접, 병원·편의시설, 엘리베이터' },
+    custom: { name: '커스텀', target: '', emphasis: '' }
+  };
 
   function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&tab==='generate')||(i===1&&tab==='history')));
-    document.getElementById('tab-generate').classList.toggle('active',tab==='generate');
-    document.getElementById('tab-history').classList.toggle('active',tab==='history');
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['generate','history','presets'][i]===tab));
+    ['generate','history','presets'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
     if(tab==='history') renderHistory();
+    if(tab==='presets') renderPresets();
   }
 
   function switchResultTab(tab) {
@@ -267,8 +366,132 @@
     selectedTone=btn.dataset.tone;
   }
 
-  function cleanText(text) {
-    return text.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F a-zA-Z0-9\s.,!?()%㎡·\-~]/g,'').replace(/\s+/g,' ').trim();
+  function selectPreset(btn) {
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPreset=btn.dataset.preset;
+    document.getElementById('customPresetArea').classList.toggle('show', selectedPreset==='custom');
+  }
+
+  async function searchAddress() {
+    const address = document.getElementById('addressInput').value.trim();
+    if(!address) return;
+    const btn = document.getElementById('addressBtn');
+    btn.disabled = true;
+    btn.textContent = '조회 중...';
+    const info = document.getElementById('addressInfo');
+
+    try {
+      const res = await fetch('/api/building', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address })
+      });
+      const data = await res.json();
+
+      // 위치 항상 입력
+      document.getElementById('location').value = address;
+
+      if(data.found) {
+        // 건물 정보 자동 입력
+        if(data.area) document.getElementById('area').value = data.area;
+        if(data.floor) document.getElementById('floor').value = data.floor;
+
+        info.innerHTML = `
+          ✅ <strong>건물 정보 자동 조회 완료!</strong><br>
+          📐 면적: <strong>${data.area || '미확인'}</strong> &nbsp;
+          🏢 층수: <strong>${data.floor || '미확인'}</strong> &nbsp;
+          📅 사용승인: <strong>${data.buildYear || '미확인'}</strong> &nbsp;
+          🏠 용도: <strong>${data.purpose || '미확인'}</strong>
+        `;
+        showToast('✓ 건물 정보 자동 입력 완료');
+      } else {
+        info.innerHTML = `✅ 주소 입력 완료. 건물 상세 정보는 직접 입력해주세요.`;
+        showToast('✓ 주소 입력됨');
+      }
+      info.classList.add('show');
+
+    } catch(e) {
+      document.getElementById('location').value = address;
+      info.innerHTML = `✅ 위치 필드에 입력됐습니다.`;
+      info.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 자동 조회';
+    }
+  }
+
+  function getPresetInfo() {
+    if(selectedPreset === 'custom') {
+      return {
+        name: '커스텀',
+        target: document.getElementById('customTarget').value || '일반 고객',
+        emphasis: document.getElementById('customEmphasis').value || '매물 장점'
+      };
+    }
+    const saved = getSavedPresets().find(p=>p.id===selectedPreset);
+    if(saved) return saved;
+    return PRESETS[selectedPreset] || PRESETS.family;
+  }
+
+  function saveCustomPreset() {
+    const target = document.getElementById('customTarget').value.trim();
+    const emphasis = document.getElementById('customEmphasis').value.trim();
+    if(!target) { showToast('타깃 설명을 입력해주세요'); return; }
+    const presets = getSavedPresets();
+    const newPreset = { id: 'custom_'+Date.now(), name: target.slice(0,10), target, emphasis };
+    presets.push(newPreset);
+    localStorage.setItem('maemulair_presets', JSON.stringify(presets));
+    renderSavedPresets();
+    showToast('⭐ 프리셋 저장됨');
+  }
+
+  function getSavedPresets() {
+    try { return JSON.parse(localStorage.getItem('maemulair_presets')||'[]'); } catch { return []; }
+  }
+
+  function renderSavedPresets() {
+    const presets = getSavedPresets();
+    const area = document.getElementById('savedPresetsArea');
+    if(presets.length === 0) { area.innerHTML = ''; return; }
+    area.innerHTML = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:1px">저장된 프리셋</div>' +
+      presets.map((p,i)=>`<span class="saved-preset-tag" onclick="applySavedPreset(${i})">${p.name} <span class="del" onclick="event.stopPropagation();deleteSavedPreset(${i})">✕</span></span>`).join('');
+  }
+
+  function applySavedPreset(idx) {
+    const preset = getSavedPresets()[idx];
+    selectedPreset = preset.id;
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('customPresetArea').classList.add('show');
+    document.getElementById('customTarget').value = preset.target;
+    document.getElementById('customEmphasis').value = preset.emphasis;
+    showToast('✓ 프리셋 적용됨: '+preset.name);
+  }
+
+  function deleteSavedPreset(idx) {
+    const presets = getSavedPresets();
+    presets.splice(idx,1);
+    localStorage.setItem('maemulair_presets', JSON.stringify(presets));
+    renderSavedPresets();
+    renderPresets();
+  }
+
+  function renderPresets() {
+    const presets = getSavedPresets();
+    const list = document.getElementById('presetList');
+    if(presets.length===0){
+      list.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--text-muted)"><div style="font-size:32px;margin-bottom:12px">⭐</div>저장된 프리셋이 없습니다.<br><span style="font-size:13px;color:var(--text-dim)">커스텀 프리셋을 만들어 저장하세요</span></div>';
+      return;
+    }
+    list.innerHTML = presets.map((p,i)=>`
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong style="font-size:15px">${p.name}</strong>
+          <button onclick="deleteSavedPreset(${i})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px">🗑 삭제</button>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">타깃: ${p.target}</div>
+        <div style="font-size:13px;color:var(--text-muted)">강조: ${p.emphasis}</div>
+      </div>`).join('');
   }
 
   async function generate() {
@@ -283,10 +506,10 @@
     const features=document.getElementById('features').value.trim();
     const nearby=document.getElementById('nearby').value.trim();
     const customerName=document.getElementById('customerName').value.trim();
+    const preset=getPresetInfo();
 
     const errorBox=document.getElementById('errorBox');
     errorBox.classList.remove('show');
-
     if(!location||!price){errorBox.textContent='위치와 가격은 필수 입력 항목입니다.';errorBox.classList.add('show');return;}
 
     const btn=document.getElementById('generateBtn');
@@ -294,8 +517,8 @@
     document.getElementById('loading').classList.add('show');
     document.getElementById('results').classList.remove('show');
 
-    const prompt=`당신은 10년 경력의 전문 부동산 공인중개사이자 부동산 블로그 전문 작가입니다.
-아래 매물 정보를 바탕으로 모든 항목을 작성해주세요. 반드시 ###태그### 형식을 정확히 지켜주세요.
+    const prompt=`당신은 10년 경력의 전문 부동산 공인중개사이자 블로그 전문 작가입니다.
+반드시 ###태그### 형식을 정확히 지키세요.
 
 [매물 정보]
 - 위치: ${location}
@@ -307,60 +530,62 @@
 - 입주가능일: ${moveIn||'협의'}
 - 특이사항: ${features||'없음'}
 - 주변환경: ${nearby||'미입력'}
+
+[타깃 고객]
+- 타깃: ${preset.target}
+- 강조 포인트: ${preset.emphasis}
 - 작성 톤: ${selectedTone}
 - 고객이름: ${customerName||'고객님'}
 
-===== A. 기본 설명문 =====
+===== A. 타깃 맞춤 설명문 =====
 
 ###짧은버전###
-(100자 내외, 핵심만 임팩트 있게)
+(${preset.target} 타깃, 100자 내외)
 ###끝###
 
 ###표준버전###
-(300자 내외, 장점 강조, 자연스럽게)
+(${preset.target} 타깃, 300자 내외)
 ###끝###
 
 ###블로그설명###
-(600자 내외, 스토리텔링)
+(${preset.target} 타깃, 600자 내외)
 ###끝###
 
-===== B. 네이버 부동산 전용 =====
+===== B. 네이버 부동산 =====
 
 ###네이버제목###
-(40자 이내, 특수문자 없이 순수 텍스트)
+(40자 이내, 특수문자 없음)
 ###끝###
 
 ###네이버본문###
-(500자 이내, 특수문자 없이 순수 텍스트만, 줄바꿈 최소화)
+(500자 이내, 특수문자 없음)
 ###끝###
 
-===== C. 네이버 블로그 포스팅 (2000자 이상, 바로 복붙 가능하게) =====
+===== C. 네이버 블로그 (2000자 이상) =====
 
 ###블로그전체###
-아래 구조로 작성해주세요:
-
 [제목]
-클릭을 유도하는 SEO 최적화 제목 (키워드 포함)
+SEO 최적화 제목
 
 [도입부]
-독자의 공감을 이끄는 감성적인 도입 2~3문장
+${preset.target}의 공감을 이끄는 도입 2~3문장
 
 [매물 기본 정보]
-📍 위치:
-💰 가격:
-📐 면적:
-🏢 층수/방향:
-🛏 방/욕실:
-📅 입주가능일:
+📍 위치: ${location}
+💰 가격: ${price}
+📐 면적: ${area||'미입력'}
+🏢 층수/방향: ${floor||'미입력'} ${direction||''}
+🛏 방/욕실: ${rooms||'미입력'}룸 ${bathrooms||'미입력'}욕실
+📅 입주가능일: ${moveIn||'협의'}
 
-[상세 설명]
-매물의 장점과 특징을 구체적으로 설명 (500자 이상)
+[${preset.name}을 위한 상세 설명]
+${preset.emphasis} 중심으로 500자 이상 설명
 
 [주변 환경]
-주변 편의시설, 교통, 학군 설명 (300자 이상)
+${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
 
-[이런 분께 추천드려요]
-- 추천 대상 3가지
+[${preset.name}께 이 매물을 추천하는 이유]
+- 추천 이유 3가지
 
 [마무리]
 자연스러운 마무리 + 문의 유도
@@ -369,26 +594,26 @@
 #관련키워드 20개 이상
 ###끝###
 
-===== D. 카카오톡 문자 =====
+===== D. 카카오톡 =====
 
 ###카카오첫연락###
-(150자 내외, 친근하게)
+(${customerName||'고객님'} 대상, 150자 내외)
 ###끝###
 
 ###카카오임장후###
-(200자 내외, 감사 + 정리)
+(임장 후 감사, 200자 내외)
 ###끝###
 
 ###카카오팔로업###
-(100자 내외, 부담없이)
+(며칠 후 팔로업, 100자 내외)
 ###끝###`;
 
     try {
       const response=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
       const data=await response.json();
       if(!response.ok) throw new Error(data.error||'API 오류');
-      showResults(data.result);
-      saveToHistory({id:Date.now(),location,price,area,floor,direction,rooms,bathrooms,moveIn,features,nearby,customerName,tone:selectedTone,result:data.result,date:new Date().toLocaleDateString('ko-KR')});
+      showResults(data.result, preset);
+      saveToHistory({id:Date.now(),location,price,area,floor,direction,rooms,bathrooms,moveIn,features,nearby,customerName,tone:selectedTone,preset:preset.name,result:data.result,date:new Date().toLocaleDateString('ko-KR')});
       showToast('✓ 저장 완료');
     } catch(err) {
       errorBox.textContent='오류: '+err.message;
@@ -399,8 +624,7 @@
     }
   }
 
-  function showResults(text) {
-    // 설명문
+  function showResults(text, preset) {
     const descTypes=[
       {key:'짧은버전',label:'짧은 버전 (100자)',tag:'SHORT'},
       {key:'표준버전',label:'표준 버전 (300자)',tag:'STANDARD'},
@@ -417,13 +641,12 @@
       cards.appendChild(card);
     });
 
-    // 네이버
     const naverCards=document.getElementById('naverCards');
     naverCards.innerHTML='';
-    [{key:'네이버제목',label:'매물 제목',limit:40,tag:'TITLE'},{key:'네이버본문',label:'매물 본문',limit:500,tag:'BODY'}].forEach((t,i)=>{
+    [{key:'네이버제목',label:'매물 제목',limit:40},{key:'네이버본문',label:'매물 본문',limit:500}].forEach((t,i)=>{
       const match=text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
       let content=match?match[1].trim():'생성 오류';
-      content=cleanText(content);
+      content=content.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F a-zA-Z0-9\s.,!?()%㎡·\-~]/g,'');
       const truncated=content.length>t.limit?content.slice(0,t.limit-3)+'...':content;
       const len=truncated.length;
       const pct=Math.min((len/t.limit)*100,100);
@@ -432,31 +655,19 @@
       const div=document.createElement('div');
       div.className='naver-card';
       div.style.animationDelay=(i*0.1)+'s';
-      div.innerHTML=`<div class="naver-label">🟢 ${t.tag} — ${t.label}</div><div class="char-counter"><span class="char-count ${status}">${len}자</span><div class="char-bar"><div class="char-bar-fill" style="width:${pct}%;background:${barColor}"></div></div><span class="limit-badge ${len>t.limit?'over':'ok'}">${t.limit}자 제한 ${len>t.limit?'초과':'이내'}</span></div><div class="naver-content">${truncated}</div><div class="naver-actions"><button class="naver-btn copy-green" onclick="copyText(this,\`${esc(truncated)}\`)">📋 복사</button><button class="naver-btn" onclick="sliceAndCopy(this,\`${esc(content)}\`,${t.limit})">✂️ ${t.limit}자로 잘라 복사</button></div>`;
+      div.innerHTML=`<div class="naver-label">🟢 ${t.label}</div><div class="char-counter"><span class="char-count ${status}">${len}자</span><div class="char-bar"><div class="char-bar-fill" style="width:${pct}%;background:${barColor}"></div></div><span class="limit-badge ${len>t.limit?'over':'ok'}">${t.limit}자 제한 ${len>t.limit?'초과':'이내'}</span></div><div class="naver-content">${truncated}</div><div class="naver-actions"><button class="naver-btn copy-green" onclick="copyText(this,\`${esc(truncated)}\`)">📋 복사</button></div>`;
       naverCards.appendChild(div);
     });
 
-    // 블로그
     const blogCards=document.getElementById('blogCards');
     blogCards.innerHTML='';
     const blogMatch=text.match(/###블로그전체###([\s\S]*?)###끝###/);
-    const blogContent=blogMatch?blogMatch[1].trim():'블로그 포스팅 생성 오류';
-    const blogLen=blogContent.length;
+    const blogContent=blogMatch?blogMatch[1].trim():'블로그 생성 오류';
     const blogDiv=document.createElement('div');
     blogDiv.className='blog-card';
-    blogDiv.innerHTML=`
-      <div class="blog-label">📰 네이버 블로그 포스팅</div>
-      <div class="blog-tip">💡 아래 내용을 전체 복사해서 네이버 블로그에 바로 붙여넣기 하세요. 사진만 추가하면 완성!</div>
-      <div class="blog-char">총 ${blogLen.toLocaleString()}자</div>
-      <div class="blog-content">${blogContent}</div>
-      <div class="blog-actions">
-        <button class="blog-btn primary" onclick="copyText(this,\`${esc(blogContent)}\`)">📋 전체 복사</button>
-        <button class="blog-btn" onclick="copySection(this,'제목',\`${esc(blogContent)}\`)">제목만 복사</button>
-        <button class="blog-btn" onclick="copySection(this,'해시태그',\`${esc(blogContent)}\`)">해시태그만 복사</button>
-      </div>`;
+    blogDiv.innerHTML=`<div class="blog-label">📰 ${preset.name} 타깃 블로그 포스팅</div><div class="blog-tip">💡 전체 복사 후 네이버 블로그에 붙여넣기. 사진만 추가하면 완성!</div><div class="blog-content">${blogContent}</div><div class="blog-actions"><button class="blog-btn primary" onclick="copyText(this,\`${esc(blogContent)}\`)">📋 전체 복사</button></div>`;
     blogCards.appendChild(blogDiv);
 
-    // 카카오
     const kakaoCards=document.getElementById('kakaoCards');
     kakaoCards.innerHTML='';
     [{key:'카카오첫연락',label:'첫 연락 문자',icon:'👋'},{key:'카카오임장후',label:'임장 후 감사 문자',icon:'🏠'},{key:'카카오팔로업',label:'팔로업 문자',icon:'📱'}].forEach((t,i)=>{
@@ -469,110 +680,56 @@
       kakaoCards.appendChild(div);
     });
 
-    document.getElementById('resultBadge').textContent=selectedTone+' 버전';
+    document.getElementById('resultBadge').textContent=preset.name+' · '+selectedTone;
     document.getElementById('results').classList.add('show');
     switchResultTab('desc');
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
   }
 
-  function esc(str) {
-    return str.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\n/g,'\\n');
-  }
+  function esc(str){return str.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\n/g,'\\n');}
 
-  function copySection(btn, section, text) {
-    const decoded = text.replace(/\\n/g,'\n');
-    const markers = {'제목': /\[제목\]([\s\S]*?)\[/, '해시태그': /\[해시태그\]([\s\S]*?)$/};
-    const match = decoded.match(markers[section]);
-    const content = match ? match[1].trim() : decoded;
-    navigator.clipboard.writeText(content).then(()=>{
-      const orig=btn.textContent;
-      btn.textContent='✓ 복사됨';
-      btn.classList.add('copied');
-      setTimeout(()=>{btn.textContent=orig;btn.classList.remove('copied');},2000);
-    });
-  }
+  function saveToHistory(item){const h=getHistory();h.unshift(item);if(h.length>50)h.pop();localStorage.setItem('maemulair_history',JSON.stringify(h));}
+  function getHistory(){try{return JSON.parse(localStorage.getItem('maemulair_history')||'[]');}catch{return[];}}
 
-  function sliceAndCopy(btn, text, limit) {
-    const clean=text.replace(/\\n/g,' ').slice(0,limit);
-    navigator.clipboard.writeText(clean).then(()=>{
-      const orig=btn.textContent;
-      btn.textContent='✓ 복사됨';
-      setTimeout(()=>{btn.textContent=orig;},2000);
-    });
-  }
-
-  function saveToHistory(item) {
-    const history=getHistory();
-    history.unshift(item);
-    if(history.length>50) history.pop();
-    localStorage.setItem('maemulair_history',JSON.stringify(history));
-  }
-
-  function getHistory() {
-    try{return JSON.parse(localStorage.getItem('maemulair_history')||'[]');}catch{return[];}
-  }
-
-  function renderHistory() {
+  function renderHistory(){
     const history=getHistory();
     const list=document.getElementById('historyList');
     const count=document.getElementById('historyCount');
-    if(history.length===0){
-      count.textContent='';
-      list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📭</div><div>아직 저장된 매물이 없습니다.</div><div style="font-size:13px;margin-top:8px;color:var(--text-dim)">설명문을 생성하면 자동으로 저장됩니다.</div></div>`;
-      return;
-    }
+    if(history.length===0){count.textContent='';list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📭</div><div>아직 저장된 매물이 없습니다.</div></div>`;return;}
     count.textContent=`총 ${history.length}개의 매물`;
     list.innerHTML='';
     history.forEach((item,idx)=>{
       const preview=item.result?item.result.replace(/###[^#]+###/g,'').replace(/\n/g,' ').trim().slice(0,80)+'...':'';
       const div=document.createElement('div');
       div.className='history-item';
-      div.innerHTML=`<div class="history-header"><div class="history-location">${item.location} · ${item.price}</div><div class="history-meta"><span class="history-tone">${item.tone}</span><span class="history-date">${item.date}</span></div></div><div class="history-preview">${preview}</div><div class="history-actions"><button class="history-btn" onclick="loadHistory(${idx})">📋 불러오기</button><button class="history-btn" onclick="viewHistory(${idx})">👁 보기</button><button class="history-btn danger" onclick="deleteHistory(${idx})">🗑 삭제</button></div>`;
+      div.innerHTML=`<div class="history-header"><div class="history-location">${item.location} · ${item.price}</div><div class="history-meta"><span class="history-tone">${item.preset||item.tone}</span><span class="history-date">${item.date}</span></div></div><div class="history-preview">${preview}</div><div class="history-actions"><button class="history-btn" onclick="loadHistory(${idx})">📋 불러오기</button><button class="history-btn" onclick="viewHistory(${idx})">👁 보기</button><button class="history-btn danger" onclick="deleteHistory(${idx})">🗑 삭제</button></div>`;
       list.appendChild(div);
     });
   }
 
-  function loadHistory(idx) {
+  function loadHistory(idx){
     const item=getHistory()[idx];
-    ['location','price','area','floor','direction','rooms','bathrooms','moveIn','features','nearby','customerName'].forEach(k=>{
-      const el=document.getElementById(k);
-      if(el) el.value=item[k]||'';
-    });
+    ['location','price','area','floor','direction','rooms','bathrooms','moveIn','features','nearby','customerName'].forEach(k=>{const el=document.getElementById(k);if(el)el.value=item[k]||'';});
     document.querySelectorAll('.tone-btn').forEach(b=>b.classList.toggle('active',b.dataset.tone===item.tone));
     selectedTone=item.tone;
     switchTab('generate');
     showToast('✓ 불러왔습니다');
   }
 
-  function viewHistory(idx) {
-    const item=getHistory()[idx];
-    switchTab('generate');
-    showResults(item.result);
-  }
+  function viewHistory(idx){const item=getHistory()[idx];switchTab('generate');showResults(item.result,{name:item.preset||item.tone});}
+  function deleteHistory(idx){const h=getHistory();h.splice(idx,1);localStorage.setItem('maemulair_history',JSON.stringify(h));renderHistory();showToast('🗑 삭제');}
 
-  function deleteHistory(idx) {
-    const history=getHistory();
-    history.splice(idx,1);
-    localStorage.setItem('maemulair_history',JSON.stringify(history));
-    renderHistory();
-    showToast('🗑 삭제되었습니다');
-  }
-
-  function copyText(btn, text) {
+  function copyText(btn,text){
     navigator.clipboard.writeText(text.replace(/\\n/g,'\n')).then(()=>{
-      const orig=btn.textContent;
-      btn.textContent='✓ 복사됨';
-      btn.classList.add('copied');
+      const orig=btn.textContent;btn.textContent='✓ 복사됨';btn.classList.add('copied');
       setTimeout(()=>{btn.textContent=orig;btn.classList.remove('copied');},2000);
     });
   }
 
-  function showToast(msg) {
-    const toast=document.getElementById('toast');
-    toast.textContent=msg;
-    toast.classList.add('show');
-    setTimeout(()=>toast.classList.remove('show'),2500);
-  }
+  function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+  // 초기화
+  renderSavedPresets();
 </script>
 </body>
 </html>
