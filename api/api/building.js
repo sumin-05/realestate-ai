@@ -7,29 +7,33 @@ export default async function handler(req, res) {
   if (!address) return res.status(400).json({ error: '주소를 입력해주세요' });
 
   try {
-    const apiKey = process.env.PUBLIC_DATA_API_KEY;
-    const encoded = encodeURIComponent(address);
+    const kakaoKey = process.env.KAKAO_API_KEY;
 
     const response = await fetch(
-      `https://apis.data.go.kr/1613000/BldRgstService_v2/getBldRgstInfo_v2?serviceKey=${apiKey}&sigunguCd=&bjdongCd=&platGbCd=&bun=&ji=&dongNm=&hoNm=&numOfRows=1&pageNo=1&_type=json&platPlc=${encoded}`,
+      `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}&analyze_type=similar`,
+      {
+        headers: { 'Authorization': `KakaoAK ${kakaoKey}` }
+      }
     );
 
     const data = await response.json();
-    const item = data?.response?.body?.items?.item;
+    const doc = data?.documents?.[0];
 
-    if (!item) {
-      return res.status(200).json({ found: false, message: '건물 정보를 찾을 수 없습니다' });
+    if (!doc) {
+      return res.status(200).json({ found: false });
     }
 
-    const building = Array.isArray(item) ? item[0] : item;
+    const roadAddr = doc.road_address;
+    const jibunAddr = doc.address;
 
     res.status(200).json({
       found: true,
-      area: building.area ? Math.round(building.area) + '㎡' : '',
-      floor: building.grndFlrCnt ? building.grndFlrCnt + '층' : '',
-      buildYear: building.crtnDay ? building.crtnDay.toString().slice(0,4) + '년' : '',
-      purpose: building.mainPurpsCdNm || '',
-      address: building.platPlc || address,
+      location: roadAddr?.address_name || doc.address_name || address,
+      buildingName: roadAddr?.building_name || '',
+      jibun: jibunAddr?.address_name || '',
+      region1: roadAddr?.region_1depth_name || '',
+      region2: roadAddr?.region_2depth_name || '',
+      region3: roadAddr?.region_3depth_name || '',
     });
 
   } catch (err) {
