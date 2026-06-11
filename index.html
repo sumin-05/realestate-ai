@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>매물AI — 부동산 설명문 자동 생성기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f0e; --surface: #181a18; --surface2: #1f221f; --border: #2a2e2a;
+    --accent: #b8f060; --accent2: #7ed957; --kakao: #FAE100;
+    --naver: #03C75A; --blog: #00B4D8; --text: #f0f0ec; --text-muted: #7a7d76; --text-dim: #4a4d48;
+    --radius: 14px; --font-serif: 'Noto Serif KR', serif; --font-sans: 'Noto Sans KR', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(184,240,96,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(184,240,96,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  header { padding: 48px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+  .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .logo-mark { width: 36px; height: 36px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: var(--bg); font-family: var(--font-serif); }
+  .logo-text { font-family: var(--font-serif); font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+  .logo-text span { color: var(--accent); }
+  h1 { font-family: var(--font-serif); font-size: clamp(28px, 5vw, 42px); font-weight: 700; line-height: 1.25; letter-spacing: -1px; margin-bottom: 12px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .subtitle { font-size: 15px; color: var(--text-muted); font-weight: 300; line-height: 1.6; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+  .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-family: var(--font-sans); font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .tab-btn.active { background: var(--accent); color: var(--bg); font-weight: 700; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .form-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 24px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  label { font-size: 12px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.5px; }
+  input, select, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-size: 14px; font-family: var(--font-sans); color: var(--text); outline: none; transition: border-color 0.2s; width: 100%; }
+  input::placeholder, textarea::placeholder { color: var(--text-dim); }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(184,240,96,0.08); }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a7d76' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+  /* 주소 검색 */
+  .address-row { display: flex; gap: 10px; align-items: flex-end; }
+  .address-row input { flex: 1; }
+  .address-search-btn { background: var(--accent); color: var(--bg); border: none; border-radius: 8px; padding: 12px 16px; font-size: 13px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .address-search-btn:hover { background: var(--accent2); }
+  .address-search-btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  .address-info { background: rgba(184,240,96,0.06); border: 1px solid rgba(184,240,96,0.2); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--accent); margin-top: 8px; display: none; }
+  .address-info.show { display: block; }
+
+  /* 타깃 프리셋 */
+  .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .preset-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.2s; font-family: var(--font-sans); }
+  .preset-btn:hover { border-color: var(--accent); }
+  .preset-btn.active { background: rgba(184,240,96,0.1); border-color: var(--accent); }
+  .preset-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+  .preset-name { font-size: 13px; font-weight: 700; color: var(--text); display: block; margin-bottom: 3px; }
+  .preset-desc { font-size: 11px; color: var(--text-muted); display: block; line-height: 1.4; }
+  .preset-btn.active .preset-name { color: var(--accent); }
+  .custom-preset { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 8px; display: none; }
+  .custom-preset.show { display: block; }
+
+  /* 저장된 프리셋 */
+  .saved-presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .saved-preset-tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .saved-preset-tag:hover { border-color: var(--accent); color: var(--accent); }
+  .saved-preset-tag .del { color: var(--text-dim); font-size: 10px; }
+
+  .tone-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tone-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; transition: all 0.2s; font-size: 13px; font-family: var(--font-sans); color: var(--text-muted); }
+  .tone-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tone-btn.active { background: rgba(184,240,96,0.1); border-color: var(--accent); color: var(--accent); font-weight: 500; }
+  .tone-emoji { display: block; font-size: 20px; margin-bottom: 4px; }
+  .generate-btn { width: 100%; background: var(--accent); color: var(--bg); border: none; border-radius: var(--radius); padding: 18px 24px; font-size: 16px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
+  .generate-btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(184,240,96,0.2); }
+  .generate-btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; transform: none; box-shadow: none; }
+  .loading { display: none; text-align: center; padding: 48px 0; }
+  .loading.show { display: block; }
+  .loading-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+  .loading-dots span { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s infinite; }
+  .loading-dots span:nth-child(2){animation-delay:0.2s} .loading-dots span:nth-child(3){animation-delay:0.4s}
+  @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-8px);opacity:1}}
+  .loading-text { font-size: 14px; color: var(--text-muted); }
+  .result-tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+  .result-tab-btn { padding: 8px 14px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); font-size: 12px; font-family: var(--font-sans); font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .result-tab-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+  .result-tab-btn.kakao-tab.active { background: var(--kakao); color: #1a1a1a; border-color: var(--kakao); }
+  .result-tab-btn.naver-tab.active { background: var(--naver); color: #fff; border-color: var(--naver); }
+  .result-tab-btn.blog-tab.active { background: var(--blog); color: #fff; border-color: var(--blog); }
+  .results { display: none; }
+  .results.show { display: block; }
+  .result-content { display: none; }
+  .result-content.active { display: block; }
+  .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .result-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; }
+  .result-badge { background: rgba(184,240,96,0.15); color: var(--accent); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(184,240,96,0.3); }
+  .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  .result-card:nth-child(2){animation-delay:0.1s} .result-card:nth-child(3){animation-delay:0.2s}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .result-card:hover { border-color: rgba(184,240,96,0.3); }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .card-type { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); text-transform: uppercase; }
+  .copy-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { background: rgba(184,240,96,0.1); border-color: var(--accent); color: var(--accent); }
+  .card-content { font-size: 15px; line-height: 1.8; color: var(--text); font-weight: 300; white-space: pre-wrap; }
+  .naver-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  .naver-card:nth-child(2){animation-delay:0.1s}
+  .naver-card:hover { border-color: rgba(3,199,90,0.3); }
+  .naver-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--naver); text-transform: uppercase; margin-bottom: 8px; }
+  .char-counter { font-size: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .char-count { font-weight: 700; }
+  .char-count.ok{color:var(--naver)} .char-count.warn{color:#FAC775} .char-count.over{color:#ff5050}
+  .char-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .char-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+  .naver-content { font-size: 14px; line-height: 1.8; color: var(--text); font-weight: 300; white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  .naver-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .naver-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 7px 14px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .naver-btn:hover { border-color: var(--naver); color: var(--naver); }
+  .naver-btn.copy-green { border-color: var(--accent); color: var(--accent); }
+  .limit-badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; }
+  .limit-badge.ok{background:rgba(3,199,90,0.15);color:var(--naver)} .limit-badge.over{background:rgba(255,80,80,0.15);color:#ff5050}
+  .blog-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  .blog-card:hover { border-color: rgba(0,180,216,0.3); }
+  .blog-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--blog); text-transform: uppercase; margin-bottom: 16px; }
+  .blog-tip { background: rgba(0,180,216,0.08); border: 1px solid rgba(0,180,216,0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--blog); margin-bottom: 16px; line-height: 1.6; }
+  .blog-content { font-size: 14px; line-height: 2; color: var(--text); font-weight: 300; white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 12px; max-height: 400px; overflow-y: auto; }
+  .blog-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .blog-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .blog-btn:hover { border-color: var(--blog); color: var(--blog); }
+  .blog-btn.primary { border-color: var(--accent); color: var(--accent); }
+  .blog-btn.copied { background: rgba(184,240,96,0.1); }
+  .kakao-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  .kakao-section:nth-child(2){animation-delay:0.1s} .kakao-section:nth-child(3){animation-delay:0.2s}
+  .kakao-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--kakao); text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .kakao-bubble { background: var(--kakao); color: #1a1a1a; border-radius: 0 12px 12px 12px; padding: 16px 18px; font-size: 14px; line-height: 1.8; white-space: pre-wrap; margin-bottom: 12px; position: relative; max-width: 80%; }
+  .kakao-bubble::before { content: ''; position: absolute; top: 0; left: -8px; width: 0; height: 0; border-top: 8px solid var(--kakao); border-left: 8px solid transparent; }
+  .kakao-copy-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; font-size: 13px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .kakao-copy-btn:hover { border-color: var(--kakao); color: var(--kakao); }
+  .kakao-copy-btn.copied { background: rgba(250,225,0,0.1); border-color: var(--kakao); color: var(--kakao); }
+  .history-empty { text-align: center; padding: 60px 0; color: var(--text-muted); }
+  .history-empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 12px; transition: all 0.2s; }
+  .history-item:hover { border-color: rgba(184,240,96,0.3); }
+  .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .history-location { font-size: 16px; font-weight: 700; }
+  .history-meta { display: flex; align-items: center; gap: 8px; }
+  .history-tone { background: rgba(184,240,96,0.1); color: var(--accent); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .history-date { font-size: 12px; color: var(--text-dim); }
+  .history-preview { font-size: 13px; color: var(--text-muted); line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .history-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; font-size: 12px; font-family: var(--font-sans); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .history-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .history-btn.danger:hover { border-color: #ff5050; color: #ff5050; }
+  .history-count { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+  .error-box { display: none; background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.3); border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #ff8080; margin-bottom: 16px; }
+  .error-box.show { display: block; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: var(--bg); padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; opacity: 0; transform: translateY(10px); transition: all 0.3s; z-index: 999; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  footer { text-align: center; padding: 48px 0 32px; font-size: 13px; color: var(--text-dim); border-top: 1px solid var(--border); margin-top: 48px; }
+  footer a { color: var(--accent); text-decoration: none; }
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-mark">매</div>
+      <div class="logo-text">매물<span>AI</span></div>
+    </div>
+    <h1>설명문은 AI가,<br>중개는 <em>당신이.</em></h1>
+    <p class="subtitle">주소 입력 → 건물 정보 자동 조회 → 타깃별 맞춤 설명문 + 블로그 + 카카오톡 한 번에</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('generate')">⚡ 생성</button>
+    <button class="tab-btn" onclick="switchTab('history')">📁 저장된 매물</button>
+    <button class="tab-btn" onclick="switchTab('presets')">⭐ 내 프리셋</button>
+  </div>
+
+  <div class="tab-content active" id="tab-generate">
+
+    <!-- 주소 자동 조회 -->
+    <div class="form-section">
+      <div class="section-label">📍 주소로 건물 정보 자동 조회</div>
+      <div class="address-row">
+        <input type="text" id="addressInput" placeholder="도로명 주소 입력 (예: 부산 해운대구 해운대해변로 264)" />
+        <button class="address-search-btn" onclick="searchAddress()" id="addressBtn">🔍 자동 조회</button>
+      </div>
+      <div class="address-info" id="addressInfo"></div>
+    </div>
+
+    <!-- 타깃 프리셋 -->
+    <div class="form-section">
+      <div class="section-label">🎯 타깃 고객 선택</div>
+      <div id="savedPresetsArea" style="margin-bottom:12px"></div>
+      <div class="preset-grid">
+        <button class="preset-btn active" data-preset="family" onclick="selectPreset(this)">
+          <span class="preset-icon">🏠</span>
+          <span class="preset-name">실거주 가족</span>
+          <span class="preset-desc">학군·공간·안전 강조</span>
+        </button>
+        <button class="preset-btn" data-preset="newlywed" onclick="selectPreset(this)">
+          <span class="preset-icon">💍</span>
+          <span class="preset-name">신혼부부</span>
+          <span class="preset-desc">감성·인테리어·교통</span>
+        </button>
+        <button class="preset-btn" data-preset="single" onclick="selectPreset(this)">
+          <span class="preset-icon">👤</span>
+          <span class="preset-name">1인 가구</span>
+          <span class="preset-desc">교통·편의·가성비</span>
+        </button>
+        <button class="preset-btn" data-preset="investor" onclick="selectPreset(this)">
+          <span class="preset-icon">📈</span>
+          <span class="preset-name">투자자</span>
+          <span class="preset-desc">수익률·입지·시세</span>
+        </button>
+        <button class="preset-btn" data-preset="retiree" onclick="selectPreset(this)">
+          <span class="preset-icon">👴</span>
+          <span class="preset-name">은퇴 부부</span>
+          <span class="preset-desc">조용함·자연·편의</span>
+        </button>
+        <button class="preset-btn" data-preset="custom" onclick="selectPreset(this)">
+          <span class="preset-icon">✏️</span>
+          <span class="preset-name">커스텀</span>
+          <span class="preset-desc">직접 입력</span>
+        </button>
+      </div>
+      <div class="custom-preset" id="customPresetArea">
+        <div class="field" style="margin-bottom:10px">
+          <label>타깃 설명 (예: 반려동물 키우는 30대 부부)</label>
+          <input type="text" id="customTarget" placeholder="타깃 고객을 직접 입력하세요" />
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>강조할 포인트 (예: 반려동물 출입 가능, 넓은 마당)</label>
+          <input type="text" id="customEmphasis" placeholder="이 타깃에게 강조할 내용" />
+        </div>
+        <button style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:var(--font-sans)" onclick="saveCustomPreset()">⭐ 이 프리셋 저장</button>
+      </div>
+    </div>
+
+    <!-- 매물 정보 -->
+    <div class="form-section">
+      <div class="section-label">매물 정보</div>
+      <div class="form-grid" style="margin-bottom:16px">
+        <div class="field"><label>위치</label><input type="text" id="location" placeholder="부산 해운대구 중동" /></div>
+        <div class="field"><label>가격</label><input type="text" id="price" placeholder="5억" /></div>
+      </div>
+      <div class="form-grid three" style="margin-bottom:16px">
+        <div class="field"><label>면적</label><input type="text" id="area" placeholder="84㎡" /></div>
+        <div class="field"><label>층수</label><input type="text" id="floor" placeholder="12층" /></div>
+        <div class="field"><label>방향</label>
+          <select id="direction">
+            <option value="">선택</option>
+            <option>남향</option><option>남동향</option><option>남서향</option>
+            <option>동향</option><option>서향</option><option>북향</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid three" style="margin-bottom:16px">
+        <div class="field"><label>방 수</label><input type="text" id="rooms" placeholder="3" /></div>
+        <div class="field"><label>욕실 수</label><input type="text" id="bathrooms" placeholder="2" /></div>
+        <div class="field"><label>입주가능일</label><input type="text" id="moveIn" placeholder="즉시입주" /></div>
+      </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>특이사항 (장점, 옵션 등)</label>
+        <textarea id="features" placeholder="바다뷰, 풀옵션, 주차 2대, 신축 등"></textarea>
+      </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>주변 환경 (블로그용, 선택)</label>
+        <input type="text" id="nearby" placeholder="해운대해수욕장 도보 5분, 지하철 2호선 해운대역 10분" />
+      </div>
+      <div class="field" style="margin-bottom:24px">
+        <label>고객 이름 (카카오톡 문자용, 선택)</label>
+        <input type="text" id="customerName" placeholder="홍길동 고객님" />
+      </div>
+      <div class="section-label">설명문 톤 선택</div>
+      <div class="tone-grid">
+        <button class="tone-btn active" data-tone="감성적" onclick="selectTone(this)"><span class="tone-emoji">🌸</span>감성적</button>
+        <button class="tone-btn" data-tone="전문적" onclick="selectTone(this)"><span class="tone-emoji">💼</span>전문적</button>
+        <button class="tone-btn" data-tone="젊은층" onclick="selectTone(this)"><span class="tone-emoji">✨</span>젊은층</button>
+        <button class="tone-btn" data-tone="투자자" onclick="selectTone(this)"><span class="tone-emoji">📈</span>투자자</button>
+      </div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+    <button class="generate-btn" onclick="generate()" id="generateBtn">⚡ 전체 자동 생성</button>
+
+    <div class="loading" id="loading">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <div class="loading-text">AI가 타깃 맞춤 콘텐츠를 작성하고 있습니다... (약 20~30초)</div>
+    </div>
+
+    <div class="results" id="results" style="margin-top:32px">
+      <div class="result-header">
+        <div class="result-title">생성 완료</div>
+        <div class="result-badge" id="resultBadge">감성적 버전</div>
+      </div>
+      <div class="result-tabs">
+        <button class="result-tab-btn active" onclick="switchResultTab('desc')">📝 설명문</button>
+        <button class="result-tab-btn naver-tab" onclick="switchResultTab('naver')">🟢 네이버 부동산</button>
+        <button class="result-tab-btn blog-tab" onclick="switchResultTab('blog')">📰 블로그</button>
+        <button class="result-tab-btn kakao-tab" onclick="switchResultTab('kakao')">💬 카카오톡</button>
+      </div>
+      <div class="result-content active" id="result-desc"><div id="resultCards"></div></div>
+      <div class="result-content" id="result-naver"><div id="naverCards"></div></div>
+      <div class="result-content" id="result-blog"><div id="blogCards"></div></div>
+      <div class="result-content" id="result-kakao"><div id="kakaoCards"></div></div>
+    </div>
+  </div>
+
+  <!-- 히스토리 탭 -->
+  <div class="tab-content" id="tab-history">
+    <div class="history-count" id="historyCount"></div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- 프리셋 탭 -->
+  <div class="tab-content" id="tab-presets">
+    <div class="form-section">
+      <div class="section-label">⭐ 저장된 커스텀 프리셋</div>
+      <div id="presetList"></div>
+    </div>
+  </div>
+
+  <footer>
+    매물AI — 공인중개사 전용 AI 자동화 서비스<br>
+    문의: <a href="https://open.kakao.com/me/seo1091302">카카오톡</a> · 010-5737-8284
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  let selectedTone = '감성적';
+  let selectedPreset = 'family';
+
+  const PRESETS = {
+    family: { name: '실거주 가족', target: '30~40대 실거주 가족', emphasis: '학군, 넓은 공간, 안전한 환경, 주차, 커뮤니티' },
+    newlywed: { name: '신혼부부', target: '20~30대 신혼부부', emphasis: '감성적인 인테리어, 교통 편의성, 카페·맛집 접근성' },
+    single: { name: '1인 가구', target: '20~30대 1인 가구', emphasis: '교통, 편의시설 근접성, 가성비, 보안' },
+    investor: { name: '투자자', target: '부동산 투자자', emphasis: '임대 수익률, 입지, 시세 상승 가능성, 공실률' },
+    retiree: { name: '은퇴 부부', target: '50~60대 은퇴 부부', emphasis: '조용한 환경, 자연 근접, 병원·편의시설, 엘리베이터' },
+    custom: { name: '커스텀', target: '', emphasis: '' }
+  };
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['generate','history','presets'][i]===tab));
+    ['generate','history','presets'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
+    if(tab==='history') renderHistory();
+    if(tab==='presets') renderPresets();
+  }
+
+  function switchResultTab(tab) {
+    const tabs=['desc','naver','blog','kakao'];
+    document.querySelectorAll('.result-tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));
+    tabs.forEach(t=>document.getElementById('result-'+t).classList.toggle('active',t===tab));
+  }
+
+  function selectTone(btn) {
+    document.querySelectorAll('.tone-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTone=btn.dataset.tone;
+  }
+
+  function selectPreset(btn) {
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPreset=btn.dataset.preset;
+    document.getElementById('customPresetArea').classList.toggle('show', selectedPreset==='custom');
+  }
+
+  async function searchAddress() {
+    const address = document.getElementById('addressInput').value.trim();
+    if(!address) return;
+    const btn = document.getElementById('addressBtn');
+    btn.disabled = true;
+    btn.textContent = '조회 중...';
+    const info = document.getElementById('addressInfo');
+
+    try {
+      const res = await fetch('/api/building', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address })
+      });
+      const data = await res.json();
+
+      if(data.found) {
+        const locationValue = data.buildingName
+          ? data.location + ' (' + data.buildingName + ')'
+          : data.location;
+        document.getElementById('location').value = locationValue;
+
+        info.innerHTML = '✅ <strong>주소 조회 완료!</strong><br>' +
+          '📍 도로명: <strong>' + data.location + '</strong><br>' +
+          '🏢 건물명: <strong>' + (data.buildingName || '없음') + '</strong> &nbsp;' +
+          '📌 지번: <strong>' + (data.jibun || '미확인') + '</strong>';
+        showToast('✓ 주소 자동 입력 완료');
+      } else {
+        document.getElementById('location').value = address;
+        info.innerHTML = '✅ 주소 입력 완료. 상세 정보는 직접 입력해주세요.';
+        showToast('✓ 주소 입력됨');
+      }
+      info.classList.add('show');
+
+    } catch(e) {
+      document.getElementById('location').value = address;
+      info.innerHTML = `✅ 위치 필드에 입력됐습니다.`;
+      info.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 자동 조회';
+    }
+  }
+
+  function getPresetInfo() {
+    if(selectedPreset === 'custom') {
+      return {
+        name: '커스텀',
+        target: document.getElementById('customTarget').value || '일반 고객',
+        emphasis: document.getElementById('customEmphasis').value || '매물 장점'
+      };
+    }
+    const saved = getSavedPresets().find(p=>p.id===selectedPreset);
+    if(saved) return saved;
+    return PRESETS[selectedPreset] || PRESETS.family;
+  }
+
+  function saveCustomPreset() {
+    const target = document.getElementById('customTarget').value.trim();
+    const emphasis = document.getElementById('customEmphasis').value.trim();
+    if(!target) { showToast('타깃 설명을 입력해주세요'); return; }
+    const presets = getSavedPresets();
+    const newPreset = { id: 'custom_'+Date.now(), name: target.slice(0,10), target, emphasis };
+    presets.push(newPreset);
+    localStorage.setItem('maemulair_presets', JSON.stringify(presets));
+    renderSavedPresets();
+    showToast('⭐ 프리셋 저장됨');
+  }
+
+  function getSavedPresets() {
+    try { return JSON.parse(localStorage.getItem('maemulair_presets')||'[]'); } catch { return []; }
+  }
+
+  function renderSavedPresets() {
+    const presets = getSavedPresets();
+    const area = document.getElementById('savedPresetsArea');
+    if(presets.length === 0) { area.innerHTML = ''; return; }
+    area.innerHTML = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:1px">저장된 프리셋</div>' +
+      presets.map((p,i)=>`<span class="saved-preset-tag" onclick="applySavedPreset(${i})">${p.name} <span class="del" onclick="event.stopPropagation();deleteSavedPreset(${i})">✕</span></span>`).join('');
+  }
+
+  function applySavedPreset(idx) {
+    const preset = getSavedPresets()[idx];
+    selectedPreset = preset.id;
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('customPresetArea').classList.add('show');
+    document.getElementById('customTarget').value = preset.target;
+    document.getElementById('customEmphasis').value = preset.emphasis;
+    showToast('✓ 프리셋 적용됨: '+preset.name);
+  }
+
+  function deleteSavedPreset(idx) {
+    const presets = getSavedPresets();
+    presets.splice(idx,1);
+    localStorage.setItem('maemulair_presets', JSON.stringify(presets));
+    renderSavedPresets();
+    renderPresets();
+  }
+
+  function renderPresets() {
+    const presets = getSavedPresets();
+    const list = document.getElementById('presetList');
+    if(presets.length===0){
+      list.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--text-muted)"><div style="font-size:32px;margin-bottom:12px">⭐</div>저장된 프리셋이 없습니다.<br><span style="font-size:13px;color:var(--text-dim)">커스텀 프리셋을 만들어 저장하세요</span></div>';
+      return;
+    }
+    list.innerHTML = presets.map((p,i)=>`
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong style="font-size:15px">${p.name}</strong>
+          <button onclick="deleteSavedPreset(${i})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px">🗑 삭제</button>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">타깃: ${p.target}</div>
+        <div style="font-size:13px;color:var(--text-muted)">강조: ${p.emphasis}</div>
+      </div>`).join('');
+  }
+
+  async function generate() {
+    const location=document.getElementById('location').value.trim();
+    const price=document.getElementById('price').value.trim();
+    const area=document.getElementById('area').value.trim();
+    const floor=document.getElementById('floor').value.trim();
+    const direction=document.getElementById('direction').value;
+    const rooms=document.getElementById('rooms').value.trim();
+    const bathrooms=document.getElementById('bathrooms').value.trim();
+    const moveIn=document.getElementById('moveIn').value.trim();
+    const features=document.getElementById('features').value.trim();
+    const nearby=document.getElementById('nearby').value.trim();
+    const customerName=document.getElementById('customerName').value.trim();
+    const preset=getPresetInfo();
+
+    const errorBox=document.getElementById('errorBox');
+    errorBox.classList.remove('show');
+    if(!location||!price){errorBox.textContent='위치와 가격은 필수 입력 항목입니다.';errorBox.classList.add('show');return;}
+
+    const btn=document.getElementById('generateBtn');
+    btn.disabled=true;
+    document.getElementById('loading').classList.add('show');
+    document.getElementById('results').classList.remove('show');
+
+    const prompt=`당신은 10년 경력의 전문 부동산 공인중개사이자 블로그 전문 작가입니다.
+반드시 ###태그### 형식을 정확히 지키세요.
+
+[매물 정보]
+- 위치: ${location}
+- 가격: ${price}
+- 면적: ${area||'미입력'}
+- 층수: ${floor||'미입력'}
+- 방향: ${direction||'미입력'}
+- 방/욕실: ${rooms||'미입력'}룸 ${bathrooms||'미입력'}욕실
+- 입주가능일: ${moveIn||'협의'}
+- 특이사항: ${features||'없음'}
+- 주변환경: ${nearby||'미입력'}
+
+[타깃 고객]
+- 타깃: ${preset.target}
+- 강조 포인트: ${preset.emphasis}
+- 작성 톤: ${selectedTone}
+- 고객이름: ${customerName||'고객님'}
+
+===== A. 타깃 맞춤 설명문 =====
+
+###짧은버전###
+(${preset.target} 타깃, 100자 내외)
+###끝###
+
+###표준버전###
+(${preset.target} 타깃, 300자 내외)
+###끝###
+
+###블로그설명###
+(${preset.target} 타깃, 600자 내외)
+###끝###
+
+===== B. 네이버 부동산 =====
+
+###네이버제목###
+(40자 이내, 특수문자 없음)
+###끝###
+
+###네이버본문###
+(500자 이내, 특수문자 없음)
+###끝###
+
+===== C. 네이버 블로그 (2000자 이상) =====
+
+###블로그전체###
+[제목]
+SEO 최적화 제목
+
+[도입부]
+${preset.target}의 공감을 이끄는 도입 2~3문장
+
+[매물 기본 정보]
+📍 위치: ${location}
+💰 가격: ${price}
+📐 면적: ${area||'미입력'}
+🏢 층수/방향: ${floor||'미입력'} ${direction||''}
+🛏 방/욕실: ${rooms||'미입력'}룸 ${bathrooms||'미입력'}욕실
+📅 입주가능일: ${moveIn||'협의'}
+
+[${preset.name}을 위한 상세 설명]
+${preset.emphasis} 중심으로 500자 이상 설명
+
+[주변 환경]
+${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
+
+[${preset.name}께 이 매물을 추천하는 이유]
+- 추천 이유 3가지
+
+[마무리]
+자연스러운 마무리 + 문의 유도
+
+[해시태그]
+#관련키워드 20개 이상
+###끝###
+
+===== D. 카카오톡 =====
+
+###카카오첫연락###
+(${customerName||'고객님'} 대상, 150자 내외)
+###끝###
+
+###카카오임장후###
+(임장 후 감사, 200자 내외)
+###끝###
+
+###카카오팔로업###
+(며칠 후 팔로업, 100자 내외)
+###끝###`;
+
+    try {
+      const response=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.error||'API 오류');
+      showResults(data.result, preset);
+      saveToHistory({id:Date.now(),location,price,area,floor,direction,rooms,bathrooms,moveIn,features,nearby,customerName,tone:selectedTone,preset:preset.name,result:data.result,date:new Date().toLocaleDateString('ko-KR')});
+      showToast('✓ 저장 완료');
+    } catch(err) {
+      errorBox.textContent='오류: '+err.message;
+      errorBox.classList.add('show');
+    } finally {
+      btn.disabled=false;
+      document.getElementById('loading').classList.remove('show');
+    }
+  }
+
+  function showResults(text, preset) {
+    const descTypes=[
+      {key:'짧은버전',label:'짧은 버전 (100자)',tag:'SHORT'},
+      {key:'표준버전',label:'표준 버전 (300자)',tag:'STANDARD'},
+      {key:'블로그설명',label:'블로그 설명 (600자)',tag:'BLOG'}
+    ];
+    const cards=document.getElementById('resultCards');
+    cards.innerHTML='';
+    descTypes.forEach(t=>{
+      const match=text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
+      const content=match?match[1].trim():'생성 오류';
+      const card=document.createElement('div');
+      card.className='result-card';
+      card.innerHTML=`<div class="card-header"><div class="card-type">${t.tag} — ${t.label}</div><button class="copy-btn" onclick="copyText(this,\`${esc(content)}\`)">복사</button></div><div class="card-content">${content}</div>`;
+      cards.appendChild(card);
+    });
+
+    const naverCards=document.getElementById('naverCards');
+    naverCards.innerHTML='';
+    [{key:'네이버제목',label:'매물 제목',limit:40},{key:'네이버본문',label:'매물 본문',limit:500}].forEach((t,i)=>{
+      const match=text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
+      let content=match?match[1].trim():'생성 오류';
+      content=content.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F a-zA-Z0-9\s.,!?()%㎡·\-~]/g,'');
+      const truncated=content.length>t.limit?content.slice(0,t.limit-3)+'...':content;
+      const len=truncated.length;
+      const pct=Math.min((len/t.limit)*100,100);
+      const status=len>t.limit?'over':len>t.limit*0.9?'warn':'ok';
+      const barColor=status==='over'?'#ff5050':status==='warn'?'#FAC775':'#03C75A';
+      const div=document.createElement('div');
+      div.className='naver-card';
+      div.style.animationDelay=(i*0.1)+'s';
+      div.innerHTML=`<div class="naver-label">🟢 ${t.label}</div><div class="char-counter"><span class="char-count ${status}">${len}자</span><div class="char-bar"><div class="char-bar-fill" style="width:${pct}%;background:${barColor}"></div></div><span class="limit-badge ${len>t.limit?'over':'ok'}">${t.limit}자 제한 ${len>t.limit?'초과':'이내'}</span></div><div class="naver-content">${truncated}</div><div class="naver-actions"><button class="naver-btn copy-green" onclick="copyText(this,\`${esc(truncated)}\`)">📋 복사</button></div>`;
+      naverCards.appendChild(div);
+    });
+
+    const blogCards=document.getElementById('blogCards');
+    blogCards.innerHTML='';
+    const blogMatch=text.match(/###블로그전체###([\s\S]*?)###끝###/);
+    const blogContent=blogMatch?blogMatch[1].trim():'블로그 생성 오류';
+    const blogDiv=document.createElement('div');
+    blogDiv.className='blog-card';
+    blogDiv.innerHTML=`<div class="blog-label">📰 ${preset.name} 타깃 블로그 포스팅</div><div class="blog-tip">💡 전체 복사 후 네이버 블로그에 붙여넣기. 사진만 추가하면 완성!</div><div class="blog-content">${blogContent}</div><div class="blog-actions"><button class="blog-btn primary" onclick="copyText(this,\`${esc(blogContent)}\`)">📋 전체 복사</button></div>`;
+    blogCards.appendChild(blogDiv);
+
+    const kakaoCards=document.getElementById('kakaoCards');
+    kakaoCards.innerHTML='';
+    [{key:'카카오첫연락',label:'첫 연락 문자',icon:'👋'},{key:'카카오임장후',label:'임장 후 감사 문자',icon:'🏠'},{key:'카카오팔로업',label:'팔로업 문자',icon:'📱'}].forEach((t,i)=>{
+      const match=text.match(new RegExp(`###${t.key}###([\\s\\S]*?)###끝###`));
+      const content=match?match[1].trim():'생성 오류';
+      const div=document.createElement('div');
+      div.className='kakao-section';
+      div.style.animationDelay=(i*0.1)+'s';
+      div.innerHTML=`<div class="kakao-label">${t.icon} ${t.label}</div><div class="kakao-bubble">${content}</div><button class="kakao-copy-btn" onclick="copyText(this,\`${esc(content)}\`)">💬 복사하기</button>`;
+      kakaoCards.appendChild(div);
+    });
+
+    document.getElementById('resultBadge').textContent=preset.name+' · '+selectedTone;
+    document.getElementById('results').classList.add('show');
+    switchResultTab('desc');
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function esc(str){return str.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\n/g,'\\n');}
+
+  function saveToHistory(item){const h=getHistory();h.unshift(item);if(h.length>50)h.pop();localStorage.setItem('maemulair_history',JSON.stringify(h));}
+  function getHistory(){try{return JSON.parse(localStorage.getItem('maemulair_history')||'[]');}catch{return[];}}
+
+  function renderHistory(){
+    const history=getHistory();
+    const list=document.getElementById('historyList');
+    const count=document.getElementById('historyCount');
+    if(history.length===0){count.textContent='';list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📭</div><div>아직 저장된 매물이 없습니다.</div></div>`;return;}
+    count.textContent=`총 ${history.length}개의 매물`;
+    list.innerHTML='';
+    history.forEach((item,idx)=>{
+      const preview=item.result?item.result.replace(/###[^#]+###/g,'').replace(/\n/g,' ').trim().slice(0,80)+'...':'';
+      const div=document.createElement('div');
+      div.className='history-item';
+      div.innerHTML=`<div class="history-header"><div class="history-location">${item.location} · ${item.price}</div><div class="history-meta"><span class="history-tone">${item.preset||item.tone}</span><span class="history-date">${item.date}</span></div></div><div class="history-preview">${preview}</div><div class="history-actions"><button class="history-btn" onclick="loadHistory(${idx})">📋 불러오기</button><button class="history-btn" onclick="viewHistory(${idx})">👁 보기</button><button class="history-btn danger" onclick="deleteHistory(${idx})">🗑 삭제</button></div>`;
+      list.appendChild(div);
+    });
+  }
+
+  function loadHistory(idx){
+    const item=getHistory()[idx];
+    ['location','price','area','floor','direction','rooms','bathrooms','moveIn','features','nearby','customerName'].forEach(k=>{const el=document.getElementById(k);if(el)el.value=item[k]||'';});
+    document.querySelectorAll('.tone-btn').forEach(b=>b.classList.toggle('active',b.dataset.tone===item.tone));
+    selectedTone=item.tone;
+    switchTab('generate');
+    showToast('✓ 불러왔습니다');
+  }
+
+  function viewHistory(idx){const item=getHistory()[idx];switchTab('generate');showResults(item.result,{name:item.preset||item.tone});}
+  function deleteHistory(idx){const h=getHistory();h.splice(idx,1);localStorage.setItem('maemulair_history',JSON.stringify(h));renderHistory();showToast('🗑 삭제');}
+
+  function copyText(btn,text){
+    navigator.clipboard.writeText(text.replace(/\\n/g,'\n')).then(()=>{
+      const orig=btn.textContent;btn.textContent='✓ 복사됨';btn.classList.add('copied');
+      setTimeout(()=>{btn.textContent=orig;btn.classList.remove('copied');},2000);
+    });
+  }
+
+  function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+  // 초기화
+  renderSavedPresets();
+</script>
+</body>
+</html>
