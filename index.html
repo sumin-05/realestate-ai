@@ -379,19 +379,52 @@
     }
   }
 
+  function currentMonthStart() {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  }
+
+  function updateAuthBadge() {
+    const badge = document.getElementById('authPlanBadge');
+    if (!currentProfile) { badge.textContent = ''; return; }
+    badge.textContent = currentProfile.plan === 'paid' ? '⭐ 유료' : `무료 (${currentProfile.usage_count}/5)`;
+  }
+
   async function loadProfile() {
     const { data, error } = await supabaseClient
       .from('profiles')
       .select('*')
       .eq('id', currentUser.id)
       .single();
-    const badge = document.getElementById('authPlanBadge');
     if (error || !data) {
-      badge.textContent = '';
+      currentProfile = null;
+      updateAuthBadge();
       return;
     }
     currentProfile = data;
-    badge.textContent = data.plan === 'paid' ? '⭐ 유료' : `무료 (${data.usage_count}/5)`;
+
+    const thisMonth = currentMonthStart();
+    if (currentProfile.plan === 'free' && currentProfile.usage_reset_at !== thisMonth) {
+      const { data: reset } = await supabaseClient
+        .from('profiles')
+        .update({ usage_count: 0, usage_reset_at: thisMonth })
+        .eq('id', currentUser.id)
+        .select()
+        .single();
+      if (reset) currentProfile = reset;
+    }
+    updateAuthBadge();
+  }
+
+  async function incrementUsage() {
+    if (!currentUser || !currentProfile || currentProfile.plan === 'paid') return;
+    const { data } = await supabaseClient
+      .from('profiles')
+      .update({ usage_count: currentProfile.usage_count + 1 })
+      .eq('id', currentUser.id)
+      .select()
+      .single();
+    if (data) { currentProfile = data; updateAuthBadge(); }
   }
 
   async function sendMagicLink() {
@@ -608,6 +641,17 @@
     errorBox.classList.remove('show');
     if(!location||!price){errorBox.textContent='위치와 가격은 필수 입력 항목입니다.';errorBox.classList.add('show');return;}
 
+    if(!currentUser){
+      errorBox.textContent='로그인 후 이용해주세요. 상단 바에서 이메일로 로그인할 수 있습니다.';
+      errorBox.classList.add('show');
+      return;
+    }
+    if(currentProfile && currentProfile.plan==='free' && currentProfile.usage_count>=5){
+      errorBox.textContent='이번 달 무료 생성 5건을 모두 사용하셨습니다. 유료 플랜은 곧 오픈됩니다!';
+      errorBox.classList.add('show');
+      return;
+    }
+
     const btn=document.getElementById('generateBtn');
     btn.disabled=true;
     document.getElementById('loading').classList.add('show');
@@ -721,6 +765,7 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
 
       saveToHistory({id:Date.now(),location,price,area,floor,direction,rooms,bathrooms,moveIn,features,nearby,customerName,tone:selectedTone,preset:preset.name,result:data.result,date:new Date().toLocaleDateString('ko-KR')});
       showToast('✓ 저장 완료');
+      incrementUsage();
     } catch(err) {
       errorBox.textContent='오류: '+err.message;
       errorBox.classList.add('show');
