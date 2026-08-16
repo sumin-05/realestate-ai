@@ -483,6 +483,23 @@
       </div>`).join('');
   }
 
+  async function sendToWebhook(payload) {
+    try {
+      const res = await fetch('/api/webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        console.log('✓ Webhook 전송 성공');
+      } else {
+        console.warn('⚠ Webhook 전송 실패:', res.status);
+      }
+    } catch (err) {
+      console.warn('⚠ Webhook 전송 실패:', err.message);
+    }
+  }
+
   async function generate() {
     const location=document.getElementById('location').value.trim();
     const price=document.getElementById('price').value.trim();
@@ -603,19 +620,14 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
       if(!response.ok) throw new Error(data.error||'API 오류');
       showResults(data.result, preset);
 
-      // Make.com Webhook 호출 (생성 완료 후)
-      fetch('https://hook.us2.make.com/k60cov82nh6mpnlsgli3m2w5eksittdw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          location, price, area, floor, direction,
-          rooms, bathrooms, moveIn, features, nearby,
-          customerName, tone: selectedTone,
-          preset: preset.name,
-          result: data.result,
-          date: new Date().toLocaleDateString('ko-KR')
-        })
-      }).catch(()=>{});
+      // Make.com Webhook 전송 (백그라운드, 실패해도 화면 동작에 영향 없음)
+      sendToWebhook({
+        location, price, area, floor, direction,
+        rooms, bathrooms, moveIn, features,
+        tone: selectedTone,
+        preset: preset.name,
+        result: data.result
+      });
 
       saveToHistory({id:Date.now(),location,price,area,floor,direction,rooms,bathrooms,moveIn,features,nearby,customerName,tone:selectedTone,preset:preset.name,result:data.result,date:new Date().toLocaleDateString('ko-KR')});
       showToast('✓ 저장 완료');
