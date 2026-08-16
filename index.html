@@ -158,10 +158,35 @@
   .toast.show { opacity: 1; transform: translateY(0); }
   footer { text-align: center; padding: 48px 0 32px; font-size: 13px; color: var(--text-dim); border-top: 1px solid var(--border); margin-top: 48px; }
   footer a { color: var(--accent); text-decoration: none; }
-  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}}
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); position: relative; z-index: 2; }
+  .topbar-inner { max-width: 860px; margin: 0 auto; padding: 10px 24px; display: flex; justify-content: flex-end; align-items: center; gap: 10px; min-height: 20px; }
+  .auth-box { display: flex; align-items: center; gap: 8px; }
+  .auth-box input { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: var(--text); width: 190px; outline: none; }
+  .auth-box input:focus { border-color: var(--accent); }
+  .auth-box button { background: var(--accent); color: var(--bg); border: none; border-radius: 6px; padding: 7px 14px; font-size: 12px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .auth-box button:hover { background: var(--accent2); }
+  .auth-box.hidden { display: none; }
+  .auth-logout-btn { background: var(--surface2) !important; color: var(--text-muted) !important; border: 1px solid var(--border) !important; }
+  .auth-logout-btn:hover { border-color: var(--accent); color: var(--accent) !important; }
+  .auth-email { font-size: 12px; color: var(--text-muted); }
+  .auth-plan { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(184,240,96,0.1); color: var(--accent); white-space: nowrap; }
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}.topbar-inner{justify-content:center}.auth-box input{width:140px}}
 </style>
 </head>
 <body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="auth-box" id="authLoggedOut">
+      <input type="email" id="authEmail" placeholder="이메일로 로그인" />
+      <button onclick="sendMagicLink()" id="authSendBtn">로그인 링크 받기</button>
+    </div>
+    <div class="auth-box hidden" id="authLoggedIn">
+      <span class="auth-plan" id="authPlanBadge"></span>
+      <span class="auth-email" id="authUserEmail"></span>
+      <button class="auth-logout-btn" onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+</div>
 <div class="container">
   <header>
     <div class="logo">
@@ -327,7 +352,72 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  const SUPABASE_URL = 'https://mpyhkzkusmuongfejarl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weWhremt1c211b25nZmVqYXJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxOTQ3NTMsImV4cCI6MjA5NTc3MDc1M30.1_rEn6N2OcTOryx9Asy4gF8zESSU3D6sFXGW8K8999k';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+  let currentProfile = null;
+
+  async function initAuth() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    handleAuthChange(session);
+    supabaseClient.auth.onAuthStateChange((_event, session) => handleAuthChange(session));
+  }
+
+  async function handleAuthChange(session) {
+    currentUser = session?.user || null;
+    document.getElementById('authLoggedOut').classList.toggle('hidden', !!currentUser);
+    document.getElementById('authLoggedIn').classList.toggle('hidden', !currentUser);
+    if (currentUser) {
+      document.getElementById('authUserEmail').textContent = currentUser.email;
+      await loadProfile();
+    } else {
+      currentProfile = null;
+    }
+  }
+
+  async function loadProfile() {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+    const badge = document.getElementById('authPlanBadge');
+    if (error || !data) {
+      badge.textContent = '';
+      return;
+    }
+    currentProfile = data;
+    badge.textContent = data.plan === 'paid' ? '⭐ 유료' : `무료 (${data.usage_count}/5)`;
+  }
+
+  async function sendMagicLink() {
+    const email = document.getElementById('authEmail').value.trim();
+    if (!email) { showToast('이메일을 입력해주세요'); return; }
+    const btn = document.getElementById('authSendBtn');
+    btn.disabled = true;
+    btn.textContent = '전송 중...';
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin }
+    });
+    btn.disabled = false;
+    btn.textContent = '로그인 링크 받기';
+    if (error) {
+      showToast('오류: ' + error.message);
+    } else {
+      showToast('✓ 로그인 링크를 이메일로 보냈습니다');
+    }
+  }
+
+  async function logout() {
+    await supabaseClient.auth.signOut();
+    showToast('로그아웃 되었습니다');
+  }
+
   let selectedTone = '감성적';
   let selectedPreset = 'family';
 
@@ -753,6 +843,7 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
   }
 
   renderSavedPresets();
+  initAuth();
 </script>
 </body>
 </html>
