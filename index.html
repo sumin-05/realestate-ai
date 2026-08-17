@@ -98,6 +98,7 @@
   .insta-after { background: rgba(184,240,96,0.06); border: 1px solid rgba(184,240,96,0.25); border-radius: 8px; padding: 14px 16px; font-size: 14px; color: var(--text); line-height: 1.7; margin-bottom: 8px; }
   .insta-caption { font-size: 14px; line-height: 1.8; color: var(--text); white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 8px; }
   .insta-hashtags { font-size: 13px; color: #e6683c; line-height: 1.8; word-break: break-word; }
+  .insta-reels { font-size: 13px; line-height: 1.9; color: var(--text); white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 8px; max-height: 420px; overflow-y: auto; }
   .results { display: none; }
   .results.show { display: block; }
   .result-content { display: none; }
@@ -871,7 +872,7 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
       price:(meta&&meta.price)||'',
       afterText:standardMatch?standardMatch[1].trim():''
     };
-    document.getElementById('instaCards').innerHTML='<div class="insta-empty">📸 이 매물 설명으로 인스타그램 홍보 콘텐츠를 만들어보세요<br><button class="insta-generate-btn" onclick="generateInstaContent()">인스타 콘텐츠 생성</button></div>';
+    document.getElementById('instaCards').innerHTML='<div class="insta-empty">📸 이 매물 설명으로 인스타그램 게시물 콘텐츠 + 릴스 대본을 만들어보세요<br><button class="insta-generate-btn" onclick="generateInstaContent()">인스타 콘텐츠 생성</button></div>';
     const cards=document.getElementById('resultCards');
     cards.innerHTML='';
     descTypes.forEach(t=>{
@@ -948,6 +949,7 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
     const after=get('애프터문구')||currentInstaContext.afterText;
     const caption=get('인스타캡션')||'생성 오류';
     const hashtags=get('해시태그')||'';
+    const reelsScript=get('릴스씬구성')||'생성 오류';
 
     document.getElementById('instaCards').innerHTML=`
       <div class="insta-card">
@@ -961,6 +963,11 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
         <div class="insta-caption">${caption}</div>
         <div class="insta-hashtags">${hashtags}</div>
         <button class="copy-btn" style="margin-top:12px" onclick="copyText(this,\`${esc(caption+'\\n\\n'+hashtags)}\`)">캡션+해시태그 복사</button>
+      </div>
+      <div class="insta-card">
+        <div class="insta-label after">🎬 릴스 대본 (15~30초, 씬별 화면·대사·자막)</div>
+        <div class="insta-reels">${reelsScript}</div>
+        <button class="copy-btn" onclick="copyText(this,\`${esc(reelsScript)}\`)">대본 복사</button>
       </div>
       <button class="insta-generate-btn" onclick="generateInstaContent()" style="width:100%">🔄 다시 생성</button>
     `;
