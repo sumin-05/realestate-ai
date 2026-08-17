@@ -170,7 +170,17 @@
   .auth-logout-btn:hover { border-color: var(--accent); color: var(--accent) !important; }
   .auth-email { font-size: 12px; color: var(--text-muted); }
   .auth-plan { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(184,240,96,0.1); color: var(--accent); white-space: nowrap; }
-  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}.topbar-inner{justify-content:center}.auth-box input{width:140px}}
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .pricing-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .pricing-card.featured { border-color: var(--accent); background: rgba(184,240,96,0.06); }
+  .pricing-name { font-family: var(--font-serif); font-size: 17px; font-weight: 700; }
+  .pricing-price { font-size: 26px; font-weight: 700; color: var(--accent); }
+  .pricing-price span { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+  .pricing-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; flex: 1; }
+  .pricing-cta { background: var(--accent); color: var(--bg); border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: all 0.2s; }
+  .pricing-cta:hover { background: var(--accent2); }
+  .pricing-cta:disabled { background: var(--border); color: var(--text-dim); cursor: not-allowed; }
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}.topbar-inner{justify-content:center}.auth-box input{width:140px}.pricing-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -201,6 +211,7 @@
     <button class="tab-btn active" onclick="switchTab('generate')">⚡ 생성</button>
     <button class="tab-btn" onclick="switchTab('history')">📁 저장된 매물</button>
     <button class="tab-btn" onclick="switchTab('presets')">⭐ 내 프리셋</button>
+    <button class="tab-btn" onclick="switchTab('pricing')">💳 요금제</button>
   </div>
 
   <div class="tab-content active" id="tab-generate">
@@ -345,6 +356,13 @@
     </div>
   </div>
 
+  <div class="tab-content" id="tab-pricing">
+    <div class="form-section">
+      <div class="section-label">💳 요금제</div>
+      <div class="pricing-grid" id="pricingGrid"></div>
+    </div>
+  </div>
+
   <footer>
     매물AI — 공인중개사 전용 AI 자동화 서비스<br>
     문의: <a href="https://open.kakao.com/me/seo1091302">카카오톡</a> · 010-5737-8284
@@ -363,8 +381,24 @@
 
   async function initAuth() {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    handleAuthChange(session);
+    await handleAuthChange(session);
     supabaseClient.auth.onAuthStateChange((_event, session) => handleAuthChange(session));
+    handleCheckoutRedirect();
+  }
+
+  function handleCheckoutRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout');
+    if (!checkout) return;
+    if (checkout === 'success') {
+      showToast('✓ 결제가 완료됐습니다! 잠시 후 플랜이 반영됩니다');
+      if (currentUser) setTimeout(loadProfile, 2000);
+    } else if (checkout === 'cancel') {
+      showToast('결제가 취소됐습니다');
+    }
+    params.delete('checkout');
+    const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    window.history.replaceState({}, '', newUrl);
   }
 
   async function handleAuthChange(session) {
@@ -451,6 +485,39 @@
     showToast('로그아웃 되었습니다');
   }
 
+  const STRIPE_PLANS = [
+    { name: '스타터', price: '9,900', priceId: 'price_1U5DqqHHnm6R37X1doayY0mh', desc: '월 20건 생성\n기본 톤 4종\n네이버/카카오/블로그 포맷' },
+    { name: '프로', price: '29,000', priceId: 'price_1U5Dt8HHnm6R37X1EX8EHhbx', desc: '무제한 생성\n모든 타깃 프리셋\n우선 지원', featured: true },
+    { name: '비즈니스', price: '59,000', priceId: 'price_1U5DthHHnm6R37X1fqbvXGSO', desc: '무제한 생성\n팀 계정 공유\n전담 지원' }
+  ];
+
+  function renderPricing() {
+    const grid = document.getElementById('pricingGrid');
+    grid.innerHTML = STRIPE_PLANS.map(p => `
+      <div class="pricing-card${p.featured ? ' featured' : ''}">
+        <div class="pricing-name">${p.name}</div>
+        <div class="pricing-price">${p.price}<span>원 / 월</span></div>
+        <div class="pricing-desc">${esc(p.desc).replace(/\\n/g,'<br>')}</div>
+        <button class="pricing-cta" onclick="subscribe('${p.priceId}')">구독하기</button>
+      </div>`).join('');
+  }
+
+  async function subscribe(priceId) {
+    if (!currentUser) { showToast('로그인 후 이용해주세요'); return; }
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId, userId: currentUser.id, userEmail: currentUser.email })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '결제 페이지 생성 실패');
+      window.location.href = data.url;
+    } catch (err) {
+      showToast('오류: ' + err.message);
+    }
+  }
+
   let selectedTone = '감성적';
   let selectedPreset = 'family';
 
@@ -464,10 +531,11 @@
   };
 
   function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['generate','history','presets'][i]===tab));
-    ['generate','history','presets'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['generate','history','presets','pricing'][i]===tab));
+    ['generate','history','presets','pricing'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
     if(tab==='history') renderHistory();
     if(tab==='presets') renderPresets();
+    if(tab==='pricing') renderPricing();
   }
 
   function switchResultTab(tab) {
@@ -647,7 +715,7 @@
       return;
     }
     if(currentProfile && currentProfile.plan==='free' && currentProfile.usage_count>=5){
-      errorBox.textContent='이번 달 무료 생성 5건을 모두 사용하셨습니다. 유료 플랜은 곧 오픈됩니다!';
+      errorBox.innerHTML='이번 달 무료 생성 5건을 모두 사용하셨습니다. <a href="#" onclick="switchTab(\'pricing\');return false;" style="color:var(--accent);text-decoration:underline">요금제 보기 →</a>';
       errorBox.classList.add('show');
       return;
     }
