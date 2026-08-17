@@ -86,6 +86,18 @@
   .result-tab-btn.kakao-tab.active { background: var(--kakao); color: #1a1a1a; border-color: var(--kakao); }
   .result-tab-btn.naver-tab.active { background: var(--naver); color: #fff; border-color: var(--naver); }
   .result-tab-btn.blog-tab.active { background: var(--blog); color: #fff; border-color: var(--blog); }
+  .result-tab-btn.insta-tab.active { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); color: #fff; border-color: transparent; }
+  .insta-empty { text-align: center; padding: 40px 0; color: var(--text-muted); }
+  .insta-generate-btn { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); color: #fff; border: none; border-radius: 10px; padding: 12px 24px; font-size: 14px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; margin-top: 12px; }
+  .insta-generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .insta-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+  .insta-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+  .insta-label.before { color: var(--text-dim); }
+  .insta-label.after { color: var(--accent); }
+  .insta-before { background: var(--surface2); border: 1px dashed var(--border); border-radius: 8px; padding: 14px 16px; font-size: 14px; color: var(--text-muted); line-height: 1.7; margin-bottom: 8px; }
+  .insta-after { background: rgba(184,240,96,0.06); border: 1px solid rgba(184,240,96,0.25); border-radius: 8px; padding: 14px 16px; font-size: 14px; color: var(--text); line-height: 1.7; margin-bottom: 8px; }
+  .insta-caption { font-size: 14px; line-height: 1.8; color: var(--text); white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 8px; }
+  .insta-hashtags { font-size: 13px; color: #e6683c; line-height: 1.8; word-break: break-word; }
   .results { display: none; }
   .results.show { display: block; }
   .result-content { display: none; }
@@ -336,11 +348,13 @@
         <button class="result-tab-btn naver-tab" onclick="switchResultTab('naver')">🟢 네이버 부동산</button>
         <button class="result-tab-btn blog-tab" onclick="switchResultTab('blog')">📰 블로그</button>
         <button class="result-tab-btn kakao-tab" onclick="switchResultTab('kakao')">💬 카카오톡</button>
+        <button class="result-tab-btn insta-tab" onclick="switchResultTab('insta')">📸 인스타 홍보</button>
       </div>
       <div class="result-content active" id="result-desc"><div id="resultCards"></div></div>
       <div class="result-content" id="result-naver"><div id="naverCards"></div></div>
       <div class="result-content" id="result-blog"><div id="blogCards"></div></div>
       <div class="result-content" id="result-kakao"><div id="kakaoCards"></div></div>
+      <div class="result-content" id="result-insta"><div id="instaCards"></div></div>
     </div>
   </div>
 
@@ -520,6 +534,7 @@
 
   let selectedTone = '감성적';
   let selectedPreset = 'family';
+  let currentInstaContext = null;
 
   const PRESETS = {
     family: { name: '실거주 가족', target: '30~40대 실거주 가족', emphasis: '학군, 넓은 공간, 안전한 환경, 주차, 커뮤니티' },
@@ -539,7 +554,7 @@
   }
 
   function switchResultTab(tab) {
-    const tabs=['desc','naver','blog','kakao'];
+    const tabs=['desc','naver','blog','kakao','insta'];
     document.querySelectorAll('.result-tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));
     tabs.forEach(t=>document.getElementById('result-'+t).classList.toggle('active',t===tab));
   }
@@ -820,7 +835,7 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
       const response=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
       const data=await response.json();
       if(!response.ok) throw new Error(data.error||'API 오류');
-      showResults(data.result, preset);
+      showResults(data.result, preset, {location, price});
 
       // Make.com Webhook 전송 (백그라운드, 실패해도 화면 동작에 영향 없음)
       sendToWebhook({
@@ -843,12 +858,20 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
     }
   }
 
-  function showResults(text, preset) {
+  function showResults(text, preset, meta) {
     const descTypes=[
       {key:'짧은버전',label:'짧은 버전 (100자)',tag:'SHORT'},
       {key:'표준버전',label:'표준 버전 (300자)',tag:'STANDARD'},
       {key:'블로그설명',label:'블로그 설명 (600자)',tag:'BLOG'}
     ];
+
+    const standardMatch=text.match(/###표준버전###([\s\S]*?)###끝###/);
+    currentInstaContext={
+      location:(meta&&meta.location)||'',
+      price:(meta&&meta.price)||'',
+      afterText:standardMatch?standardMatch[1].trim():''
+    };
+    document.getElementById('instaCards').innerHTML='<div class="insta-empty">📸 이 매물 설명으로 인스타그램 홍보 콘텐츠를 만들어보세요<br><button class="insta-generate-btn" onclick="generateInstaContent()">인스타 콘텐츠 생성</button></div>';
     const cards=document.getElementById('resultCards');
     cards.innerHTML='';
     descTypes.forEach(t=>{
@@ -905,6 +928,44 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
   }
 
+  async function generateInstaContent() {
+    if(!currentInstaContext || !currentInstaContext.afterText) return;
+    const container=document.getElementById('instaCards');
+    container.innerHTML='<div class="insta-empty">✨ 인스타 콘텐츠 생성 중...</div>';
+    try {
+      const res=await fetch('/api/instagram-content',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(currentInstaContext)});
+      const data=await res.json();
+      if(!res.ok) throw new Error(data.error||'생성 실패');
+      renderInstaContent(data.result);
+    } catch(err) {
+      container.innerHTML=`<div class="insta-empty">오류: ${err.message}<br><button class="insta-generate-btn" onclick="generateInstaContent()">다시 시도</button></div>`;
+    }
+  }
+
+  function renderInstaContent(text) {
+    const get=(key)=>{const m=text.match(new RegExp(`###${key}###([\\s\\S]*?)###끝###`));return m?m[1].trim():'';};
+    const before=get('비포문구')||'생성 오류';
+    const after=get('애프터문구')||currentInstaContext.afterText;
+    const caption=get('인스타캡션')||'생성 오류';
+    const hashtags=get('해시태그')||'';
+
+    document.getElementById('instaCards').innerHTML=`
+      <div class="insta-card">
+        <div class="insta-label before">😐 BEFORE — 매물AI 없이</div>
+        <div class="insta-before">${before}</div>
+        <div class="insta-label after" style="margin-top:16px">✨ AFTER — 매물AI 사용</div>
+        <div class="insta-after">${after}</div>
+      </div>
+      <div class="insta-card">
+        <div class="insta-label after">📸 인스타그램 캡션</div>
+        <div class="insta-caption">${caption}</div>
+        <div class="insta-hashtags">${hashtags}</div>
+        <button class="copy-btn" style="margin-top:12px" onclick="copyText(this,\`${esc(caption+'\\n\\n'+hashtags)}\`)">캡션+해시태그 복사</button>
+      </div>
+      <button class="insta-generate-btn" onclick="generateInstaContent()" style="width:100%">🔄 다시 생성</button>
+    `;
+  }
+
   function esc(str){return str.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\n/g,'\\n');}
 
   function saveToHistory(item){const h=getHistory();h.unshift(item);if(h.length>50)h.pop();localStorage.setItem('maemulair_history',JSON.stringify(h));}
@@ -935,7 +996,7 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
     showToast('✓ 불러왔습니다');
   }
 
-  function viewHistory(idx){const item=getHistory()[idx];switchTab('generate');showResults(item.result,{name:item.preset||item.tone});}
+  function viewHistory(idx){const item=getHistory()[idx];switchTab('generate');showResults(item.result,{name:item.preset||item.tone},{location:item.location,price:item.price});}
   function deleteHistory(idx){const h=getHistory();h.splice(idx,1);localStorage.setItem('maemulair_history',JSON.stringify(h));renderHistory();showToast('🗑 삭제');}
 
   function copyText(btn,text){
