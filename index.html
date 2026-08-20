@@ -179,6 +179,7 @@
   .auth-box button { background: var(--accent); color: var(--bg); border: none; border-radius: 6px; padding: 7px 14px; font-size: 12px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
   .auth-box button:hover { background: var(--accent2); }
   .auth-box.hidden { display: none; }
+  .tab-btn.hidden { display: none; }
   .auth-logout-btn { background: var(--surface2) !important; color: var(--text-muted) !important; border: 1px solid var(--border) !important; }
   .auth-logout-btn:hover { border-color: var(--accent); color: var(--accent) !important; }
   .auth-email { font-size: 12px; color: var(--text-muted); }
@@ -193,6 +194,17 @@
   .pricing-cta { background: var(--accent); color: var(--bg); border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: all 0.2s; }
   .pricing-cta:hover { background: var(--accent2); }
   .pricing-cta:disabled { background: var(--border); color: var(--text-dim); cursor: not-allowed; }
+  .draft-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 12px; }
+  .draft-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .draft-title { font-size: 16px; font-weight: 700; }
+  .draft-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .draft-status { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .draft-status.draft { background: rgba(184,240,96,0.1); color: var(--accent); }
+  .draft-status.posted { background: rgba(3,199,90,0.15); color: var(--naver); }
+  .draft-date { font-size: 12px; color: var(--text-dim); }
+  .draft-content { font-size: 14px; line-height: 1.8; color: var(--text); white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 12px 0; max-height: 340px; overflow-y: auto; display: none; }
+  .draft-content.show { display: block; }
+  .draft-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}.topbar-inner{justify-content:center}.auth-box input{width:140px}.pricing-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -225,6 +237,7 @@
     <button class="tab-btn" onclick="switchTab('history')">📁 저장된 매물</button>
     <button class="tab-btn" onclick="switchTab('presets')">⭐ 내 프리셋</button>
     <button class="tab-btn" onclick="switchTab('pricing')">💳 요금제</button>
+    <button class="tab-btn hidden" id="draftsTabBtn" onclick="switchTab('drafts')">🗂 블로그 초안</button>
   </div>
 
   <div class="tab-content active" id="tab-generate">
@@ -378,6 +391,13 @@
     </div>
   </div>
 
+  <div class="tab-content" id="tab-drafts">
+    <div class="form-section">
+      <div class="section-label">🗂 블로그 초안 (관리자 전용, 매주 자동 생성)</div>
+      <div id="draftsList"></div>
+    </div>
+  </div>
+
   <footer>
     매물AI — 공인중개사 전용 AI 자동화 서비스<br>
     문의: <a href="https://open.kakao.com/me/seo1091302">카카오톡</a> · 010-5737-8284
@@ -463,6 +483,9 @@
       if (reset) currentProfile = reset;
     }
     updateAuthBadge();
+
+    const showDraftsTab = currentProfile.is_admin && new URLSearchParams(window.location.search).get('admin') === '1';
+    document.getElementById('draftsTabBtn').classList.toggle('hidden', !showDraftsTab);
   }
 
   async function incrementUsage() {
@@ -533,6 +556,60 @@
     }
   }
 
+  async function renderDrafts() {
+    const list = document.getElementById('draftsList');
+    list.innerHTML = '<div class="insta-empty">불러오는 중...</div>';
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const res = await fetch('/api/blog-drafts', {
+        headers: { 'Authorization': 'Bearer ' + session.access_token }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '불러오기 실패');
+      if (!data.drafts || data.drafts.length === 0) {
+        list.innerHTML = '<div class="insta-empty">아직 생성된 초안이 없습니다. 매주 월요일 자동 생성됩니다.</div>';
+        return;
+      }
+      list.innerHTML = data.drafts.map(d => `
+        <div class="draft-item">
+          <div class="draft-header">
+            <div class="draft-title">${d.title}</div>
+            <div class="draft-meta">
+              <span class="draft-status ${d.status}">${d.status === 'posted' ? '게시완료' : '초안'}</span>
+              <span class="draft-date">${new Date(d.created_at).toLocaleDateString('ko-KR')}</span>
+            </div>
+          </div>
+          <div class="draft-content" id="draft-content-${d.id}">${d.content}</div>
+          <div class="draft-actions">
+            <button class="history-btn" onclick="toggleDraftContent(${d.id})">👁 보기/접기</button>
+            <button class="copy-btn" onclick="copyText(this,\`${esc(d.content)}\`)">📋 복사</button>
+            ${d.status !== 'posted' ? `<button class="history-btn" onclick="markPosted(${d.id})">✓ 게시완료로 표시</button>` : ''}
+          </div>
+        </div>`).join('');
+    } catch (err) {
+      list.innerHTML = '<div class="insta-empty">오류: ' + err.message + '</div>';
+    }
+  }
+
+  function toggleDraftContent(id) {
+    document.getElementById('draft-content-' + id).classList.toggle('show');
+  }
+
+  async function markPosted(id) {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      await fetch('/api/blog-drafts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+        body: JSON.stringify({ id, status: 'posted' })
+      });
+      showToast('✓ 게시완료로 표시됨');
+      renderDrafts();
+    } catch (err) {
+      showToast('오류: ' + err.message);
+    }
+  }
+
   let selectedTone = '감성적';
   let selectedPreset = 'family';
   let currentInstaContext = null;
@@ -547,11 +624,13 @@
   };
 
   function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['generate','history','presets','pricing'][i]===tab));
-    ['generate','history','presets','pricing'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
+    const order=['generate','history','presets','pricing','drafts'];
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',order[i]===tab));
+    order.forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
     if(tab==='history') renderHistory();
     if(tab==='presets') renderPresets();
     if(tab==='pricing') renderPricing();
+    if(tab==='drafts') renderDrafts();
   }
 
   function switchResultTab(tab) {
