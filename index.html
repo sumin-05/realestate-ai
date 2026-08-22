@@ -238,6 +238,7 @@
     <button class="tab-btn" onclick="switchTab('presets')">⭐ 내 프리셋</button>
     <button class="tab-btn" onclick="switchTab('pricing')">💳 요금제</button>
     <button class="tab-btn hidden" id="draftsTabBtn" onclick="switchTab('drafts')">🗂 블로그 초안</button>
+    <button class="tab-btn hidden" id="salesTabBtn" onclick="switchTab('sales')">🎯 영업 메시지</button>
   </div>
 
   <div class="tab-content active" id="tab-generate">
@@ -398,6 +399,19 @@
     </div>
   </div>
 
+  <div class="tab-content" id="tab-sales">
+    <div class="form-section">
+      <div class="section-label">🎯 개인화 영업 메시지 생성 (관리자 전용)</div>
+      <div class="form-grid three" style="margin-bottom:16px">
+        <div class="field"><label>중개사 이름</label><input type="text" id="salesAgentName" placeholder="홍길동" /></div>
+        <div class="field"><label>사무소명</label><input type="text" id="salesOfficeName" placeholder="OO공인중개사" /></div>
+        <div class="field"><label>지역</label><input type="text" id="salesRegion" placeholder="부산 해운대구" /></div>
+      </div>
+      <button class="generate-btn" onclick="generateSalesMessage()" id="salesGenBtn">🎯 영업 메시지 생성</button>
+      <div id="salesResult" style="margin-top:20px"></div>
+    </div>
+  </div>
+
   <footer>
     매물AI — 공인중개사 전용 AI 자동화 서비스<br>
     문의: <a href="https://open.kakao.com/me/seo1091302">카카오톡</a> · 010-5737-8284
@@ -486,6 +500,7 @@
 
     const showDraftsTab = currentProfile.is_admin && new URLSearchParams(window.location.search).get('admin') === '1';
     document.getElementById('draftsTabBtn').classList.toggle('hidden', !showDraftsTab);
+    document.getElementById('salesTabBtn').classList.toggle('hidden', !showDraftsTab);
   }
 
   async function incrementUsage() {
@@ -610,6 +625,52 @@
     }
   }
 
+  async function generateSalesMessage() {
+    const agentName = document.getElementById('salesAgentName').value.trim();
+    const officeName = document.getElementById('salesOfficeName').value.trim();
+    const region = document.getElementById('salesRegion').value.trim();
+    const resultBox = document.getElementById('salesResult');
+
+    if (!agentName) { showToast('중개사 이름을 입력해주세요'); return; }
+
+    const btn = document.getElementById('salesGenBtn');
+    btn.disabled = true;
+    resultBox.innerHTML = '<div class="insta-empty">✨ 생성 중...</div>';
+
+    try {
+      const res = await fetch('/api/sales-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentName, officeName, region })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '생성 실패');
+
+      const get = (key) => {
+        const m = data.result.match(new RegExp(`###${key}###([\\s\\S]*?)###끝###`));
+        return m ? m[1].trim() : '생성 오류';
+      };
+      const message = get('영업메시지');
+      const followup = get('팔로업메시지');
+
+      resultBox.innerHTML = `
+        <div class="insta-card">
+          <div class="insta-label after">💬 첫 영업 메시지</div>
+          <div class="insta-caption">${message}</div>
+          <button class="copy-btn" onclick="copyText(this,\`${esc(message)}\`)">복사</button>
+        </div>
+        <div class="insta-card">
+          <div class="insta-label before">⏰ 3일 후 팔로업 메시지</div>
+          <div class="insta-caption">${followup}</div>
+          <button class="copy-btn" onclick="copyText(this,\`${esc(followup)}\`)">복사</button>
+        </div>`;
+    } catch (err) {
+      resultBox.innerHTML = '<div class="insta-empty">오류: ' + err.message + '</div>';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   let selectedTone = '감성적';
   let selectedPreset = 'family';
   let currentInstaContext = null;
@@ -624,7 +685,7 @@
   };
 
   function switchTab(tab) {
-    const order=['generate','history','presets','pricing','drafts'];
+    const order=['generate','history','presets','pricing','drafts','sales'];
     document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',order[i]===tab));
     order.forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
     if(tab==='history') renderHistory();
