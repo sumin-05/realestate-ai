@@ -3,6 +3,10 @@
     {
       "path": "/api/blog-draft-cron",
       "schedule": "0 0 * * 1"
+    },
+    {
+      "path": "/api/trial-followup-cron",
+      "schedule": "0 0 * * *"
     }
   ]
 }
