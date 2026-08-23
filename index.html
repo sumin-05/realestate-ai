@@ -205,7 +205,15 @@
   .draft-content { font-size: 14px; line-height: 1.8; color: var(--text); white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 12px 0; max-height: 340px; overflow-y: auto; display: none; }
   .draft-content.show { display: block; }
   .draft-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}.topbar-inner{justify-content:center}.auth-box input{width:140px}.pricing-grid{grid-template-columns:1fr}}
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; text-align: center; }
+  .stat-value { font-size: 26px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .report-table th, .report-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  .report-table th { color: var(--text-muted); font-weight: 500; font-size: 12px; }
+  .report-table td { color: var(--text); }
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid.three{grid-template-columns:1fr 1fr}.tone-grid{grid-template-columns:repeat(2,1fr)}.preset-grid{grid-template-columns:repeat(2,1fr)}.form-section{padding:20px}.kakao-bubble{max-width:100%}.topbar-inner{justify-content:center}.auth-box input{width:140px}.pricing-grid{grid-template-columns:1fr}.stat-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -239,6 +247,7 @@
     <button class="tab-btn" onclick="switchTab('pricing')">💳 요금제</button>
     <button class="tab-btn hidden" id="draftsTabBtn" onclick="switchTab('drafts')">🗂 블로그 초안</button>
     <button class="tab-btn hidden" id="salesTabBtn" onclick="switchTab('sales')">🎯 영업 메시지</button>
+    <button class="tab-btn hidden" id="dashboardTabBtn" onclick="switchTab('dashboard')">📊 대시보드</button>
   </div>
 
   <div class="tab-content active" id="tab-generate">
@@ -412,6 +421,17 @@
     </div>
   </div>
 
+  <div class="tab-content" id="tab-dashboard">
+    <div class="form-section">
+      <div class="section-label">📊 전체 현황 (관리자 전용)</div>
+      <div id="dashboardStats"></div>
+    </div>
+    <div class="form-section">
+      <div class="section-label">📈 유료 고객 월간 리포트</div>
+      <div id="dashboardReports"></div>
+    </div>
+  </div>
+
   <footer>
     매물AI — 공인중개사 전용 AI 자동화 서비스<br>
     문의: <a href="https://open.kakao.com/me/seo1091302">카카오톡</a> · 010-5737-8284
@@ -501,6 +521,7 @@
     const showDraftsTab = currentProfile.is_admin && new URLSearchParams(window.location.search).get('admin') === '1';
     document.getElementById('draftsTabBtn').classList.toggle('hidden', !showDraftsTab);
     document.getElementById('salesTabBtn').classList.toggle('hidden', !showDraftsTab);
+    document.getElementById('dashboardTabBtn').classList.toggle('hidden', !showDraftsTab);
   }
 
   async function incrementUsage() {
@@ -512,6 +533,17 @@
       .select()
       .single();
     if (data) { currentProfile = data; updateAuthBadge(); }
+  }
+
+  async function logGeneration({location, price, preset, tone}) {
+    if (!currentUser) return;
+    try {
+      await supabaseClient.from('generations').insert({
+        user_id: currentUser.id, location, price, preset, tone
+      });
+    } catch (err) {
+      console.warn('생성 이력 기록 실패:', err.message);
+    }
   }
 
   async function sendMagicLink() {
@@ -671,6 +703,49 @@
     }
   }
 
+  async function renderDashboard() {
+    const statsBox = document.getElementById('dashboardStats');
+    const reportsBox = document.getElementById('dashboardReports');
+    statsBox.innerHTML = '<div class="insta-empty">불러오는 중...</div>';
+    reportsBox.innerHTML = '';
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const res = await fetch('/api/admin-stats', {
+        headers: { 'Authorization': 'Bearer ' + session.access_token }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '불러오기 실패');
+
+      statsBox.innerHTML = `
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-value">${data.totalCustomers}</div><div class="stat-label">전체 고객</div></div>
+          <div class="stat-card"><div class="stat-value">${data.paidCustomers}</div><div class="stat-label">유료 고객</div></div>
+          <div class="stat-card"><div class="stat-value">${data.totalGenerations}</div><div class="stat-label">누적 생성 건수</div></div>
+          <div class="stat-card"><div class="stat-value">${data.monthGenerations}</div><div class="stat-label">이번 달 생성 건수</div></div>
+        </div>`;
+
+      if (data.customerReports.length === 0) {
+        reportsBox.innerHTML = '<div class="insta-empty">아직 유료 고객이 없습니다.</div>';
+        return;
+      }
+
+      reportsBox.innerHTML = `
+        <table class="report-table">
+          <thead><tr><th>이메일</th><th>이번 달 생성 건수</th><th>예상 절약 시간</th></tr></thead>
+          <tbody>
+            ${data.customerReports.map(c => `
+              <tr>
+                <td>${c.email}</td>
+                <td>${c.monthlyGenerations}건</td>
+                <td>${Math.round(c.estimatedMinutesSaved / 60 * 10) / 10}시간</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    } catch (err) {
+      statsBox.innerHTML = '<div class="insta-empty">오류: ' + err.message + '</div>';
+    }
+  }
+
   let selectedTone = '감성적';
   let selectedPreset = 'family';
   let currentInstaContext = null;
@@ -685,13 +760,14 @@
   };
 
   function switchTab(tab) {
-    const order=['generate','history','presets','pricing','drafts','sales'];
+    const order=['generate','history','presets','pricing','drafts','sales','dashboard'];
     document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',order[i]===tab));
     order.forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
     if(tab==='history') renderHistory();
     if(tab==='presets') renderPresets();
     if(tab==='pricing') renderPricing();
     if(tab==='drafts') renderDrafts();
+    if(tab==='dashboard') renderDashboard();
   }
 
   function switchResultTab(tab) {
@@ -990,6 +1066,7 @@ ${nearby||'주변 편의시설, 교통, 학군 설명'} 300자 이상
       saveToHistory({id:Date.now(),location,price,area,floor,direction,rooms,bathrooms,moveIn,features,nearby,customerName,tone:selectedTone,preset:preset.name,result:data.result,date:new Date().toLocaleDateString('ko-KR')});
       showToast('✓ 저장 완료');
       incrementUsage();
+      logGeneration({location, price, preset: preset.name, tone: selectedTone});
     } catch(err) {
       errorBox.textContent='오류: '+err.message;
       errorBox.classList.add('show');
