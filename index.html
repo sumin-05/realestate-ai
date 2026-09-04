@@ -202,7 +202,6 @@
   .draft-status.draft { background: rgba(184,240,96,0.1); color: var(--accent); }
   .draft-status.posted { background: rgba(3,199,90,0.15); color: var(--naver); }
   .draft-category { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(120,120,255,0.12); color: #7c7cff; }
-  .draft-image { width: 100%; max-width: 360px; border-radius: 8px; margin-bottom: 12px; display: block; }
   .draft-date { font-size: 12px; color: var(--text-dim); }
   .draft-content { font-size: 14px; line-height: 1.8; color: var(--text); white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 12px 0; max-height: 340px; overflow-y: auto; display: none; }
   .draft-content.show { display: block; }
@@ -629,12 +628,10 @@
               <span class="draft-date">${new Date(d.created_at).toLocaleDateString('ko-KR')}</span>
             </div>
           </div>
-          ${d.image_url ? `<img class="draft-image" src="${d.image_url}" alt="">` : ''}
           <div class="draft-content" id="draft-content-${d.id}">${d.content}</div>
           <div class="draft-actions">
             <button class="history-btn" onclick="toggleDraftContent(${d.id})">👁 보기/접기</button>
             <button class="copy-btn" onclick="copyText(this,\`${esc(d.content)}\`)">📋 복사</button>
-            ${d.image_url ? `<a class="history-btn" href="${d.image_url}" target="_blank" rel="noopener">🖼 이미지 원본 보기(저장)</a>` : ''}
             ${d.status !== 'posted' ? `<button class="history-btn" onclick="markPosted(${d.id})">✓ 게시완료로 표시</button>` : ''}
           </div>
         </div>`).join('');

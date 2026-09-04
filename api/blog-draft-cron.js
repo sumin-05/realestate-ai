@@ -1,5 +1,3 @@
-import { generateBlogImage } from '../lib/blog-image.js';
-
 const PROMO_TOPICS = [
   '매물AI를 만들게 된 계기 - 공인중개사가 겪는 반복 업무(매물 설명문, 홍보 문구 작성) 문제를 소개하고 왜 AI로 해결하려 했는지 이야기',
   '매물AI 개발 과정 - 로그인/결제 기능부터 인스타그램 홍보 콘텐츠, 블로그 자동 발행, 영업 메시지 자동화까지 하나씩 만들어간 과정 소개',
@@ -74,7 +72,7 @@ function parseTitleAndBody(text, fallbackTitle) {
   };
 }
 
-async function insertDraft({ title, content, category, source_headlines, image_url }) {
+async function insertDraft({ title, content, category, source_headlines }) {
   const insertRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/blog_drafts`, {
     method: 'POST',
     headers: {
@@ -83,19 +81,10 @@ async function insertDraft({ title, content, category, source_headlines, image_u
       'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
       'Prefer': 'return=minimal'
     },
-    body: JSON.stringify({ title, content, category, source_headlines: source_headlines || null, image_url: image_url || null })
+    body: JSON.stringify({ title, content, category, source_headlines: source_headlines || null })
   });
   if (!insertRes.ok) {
     throw new Error('Supabase 저장 실패: ' + (await insertRes.text()));
-  }
-}
-
-async function safeGenerateImage(prompt, filename) {
-  try {
-    const url = await generateBlogImage(prompt, filename);
-    return { url, error: null };
-  } catch (err) {
-    return { url: null, error: err.message };
   }
 }
 
@@ -154,12 +143,8 @@ ${headlineList}
     prompt
   );
   const { title, content } = parseTitleAndBody(text, '이번 주 부동산 트렌드');
-  const image = await safeGenerateImage(
-    'A warm, modern flat illustration representing the Korean real estate market: city apartment buildings, a softly rising graph, soft pastel colors, no text, no letters, no numbers, clean minimal style',
-    `trend-${Date.now()}.png`
-  );
-  await insertDraft({ title, content, category: 'trend', source_headlines: headlines, image_url: image.url });
-  return { title, image_url: image.url, image_error: image.error };
+  await insertDraft({ title, content, category: 'trend', source_headlines: headlines });
+  return { title };
 }
 
 async function generatePromoDraft() {
@@ -191,12 +176,8 @@ ${topic}
     prompt
   );
   const { title, content } = parseTitleAndBody(text, topic);
-  const image = await safeGenerateImage(
-    'A warm, friendly flat illustration of a Korean real estate agent working happily on a laptop with a small friendly AI assistant icon nearby, cozy modern office, soft pastel colors, no text, no letters, no numbers, clean minimal style',
-    `promo-${Date.now()}.png`
-  );
-  await insertDraft({ title, content, category: 'promo', image_url: image.url });
-  return { title, topic, image_url: image.url, image_error: image.error };
+  await insertDraft({ title, content, category: 'promo' });
+  return { title, topic };
 }
 
 export default async function handler(req, res) {
