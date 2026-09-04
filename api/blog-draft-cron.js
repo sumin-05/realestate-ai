@@ -92,9 +92,10 @@ async function insertDraft({ title, content, category, source_headlines, image_u
 
 async function safeGenerateImage(prompt, filename) {
   try {
-    return await generateBlogImage(prompt, filename);
+    const url = await generateBlogImage(prompt, filename);
+    return { url, error: null };
   } catch (err) {
-    return null;
+    return { url: null, error: err.message };
   }
 }
 
@@ -153,12 +154,12 @@ ${headlineList}
     prompt
   );
   const { title, content } = parseTitleAndBody(text, '이번 주 부동산 트렌드');
-  const image_url = await safeGenerateImage(
+  const image = await safeGenerateImage(
     'A warm, modern flat illustration representing the Korean real estate market: city apartment buildings, a softly rising graph, soft pastel colors, no text, no letters, no numbers, clean minimal style',
     `trend-${Date.now()}.png`
   );
-  await insertDraft({ title, content, category: 'trend', source_headlines: headlines, image_url });
-  return { title, image_url };
+  await insertDraft({ title, content, category: 'trend', source_headlines: headlines, image_url: image.url });
+  return { title, image_url: image.url, image_error: image.error };
 }
 
 async function generatePromoDraft() {
@@ -190,12 +191,12 @@ ${topic}
     prompt
   );
   const { title, content } = parseTitleAndBody(text, topic);
-  const image_url = await safeGenerateImage(
+  const image = await safeGenerateImage(
     'A warm, friendly flat illustration of a Korean real estate agent working happily on a laptop with a small friendly AI assistant icon nearby, cozy modern office, soft pastel colors, no text, no letters, no numbers, clean minimal style',
     `promo-${Date.now()}.png`
   );
-  await insertDraft({ title, content, category: 'promo', image_url });
-  return { title, topic, image_url };
+  await insertDraft({ title, content, category: 'promo', image_url: image.url });
+  return { title, topic, image_url: image.url, image_error: image.error };
 }
 
 export default async function handler(req, res) {
