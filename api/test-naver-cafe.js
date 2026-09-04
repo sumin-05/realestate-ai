@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   const query = req.query.q || '매물 설명문';
-  const url = `https://naverapihub.apigw.ntruss.com/v1/search/cafearticle.json?query=${encodeURIComponent(query)}&display=5&sort=date`;
+  const url = `https://naverapihub.apigw.ntruss.com/search/v1/cafearticle?query=${encodeURIComponent(query)}&display=5`;
 
   try {
     const response = await fetch(url, {
