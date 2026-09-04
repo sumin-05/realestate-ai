@@ -1,3 +1,5 @@
+import { runCafeMonitor } from '../lib/cafe-monitor.js';
+
 const FOLLOWUP_DAYS = [3, 7, 14];
 
 async function fetchFreeProfiles() {
@@ -61,7 +63,14 @@ export default async function handler(req, res) {
       }
     }
 
-    res.status(200).json({ success: true, checked: profiles.length, sent: sentCount });
+    let cafeResult;
+    try {
+      cafeResult = await runCafeMonitor();
+    } catch (cafeErr) {
+      cafeResult = { error: cafeErr.message };
+    }
+
+    res.status(200).json({ success: true, checked: profiles.length, sent: sentCount, cafeMonitor: cafeResult });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
