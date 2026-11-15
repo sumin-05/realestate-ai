@@ -571,30 +571,30 @@
     showToast('로그아웃 되었습니다');
   }
 
-  const STRIPE_PLANS = [
-    { name: '스타터', price: '9,900', priceId: 'price_1U5DqqHHnm6R37X1doayY0mh', desc: '월 20건 생성\n기본 톤 4종\n네이버/카카오/블로그 포맷' },
-    { name: '프로', price: '29,000', priceId: 'price_1U5Dt8HHnm6R37X1EX8EHhbx', desc: '무제한 생성\n모든 타깃 프리셋\n우선 지원', featured: true },
-    { name: '비즈니스', price: '59,000', priceId: 'price_1U5DthHHnm6R37X1fqbvXGSO', desc: '무제한 생성\n팀 계정 공유\n전담 지원' }
+  const TOSS_PLANS = [
+    { name: '스타터', price: '9,900', amount: 9900, desc: '월 20건 생성\n기본 톤 4종\n네이버/카카오/블로그 포맷' },
+    { name: '프로', price: '29,000', amount: 29000, desc: '무제한 생성\n모든 타깃 프리셋\n우선 지원', featured: true },
+    { name: '비즈니스', price: '59,000', amount: 59000, desc: '무제한 생성\n팀 계정 공유\n전담 지원' }
   ];
 
   function renderPricing() {
     const grid = document.getElementById('pricingGrid');
-    grid.innerHTML = STRIPE_PLANS.map(p => `
+    grid.innerHTML = TOSS_PLANS.map(p => `
       <div class="pricing-card${p.featured ? ' featured' : ''}">
         <div class="pricing-name">${p.name}</div>
         <div class="pricing-price">${p.price}<span>원 / 월</span></div>
         <div class="pricing-desc">${esc(p.desc).replace(/\\n/g,'<br>')}</div>
-        <button class="pricing-cta" onclick="subscribe('${p.priceId}')">구독하기</button>
+        <button class="pricing-cta" onclick="subscribe(${p.amount}, '${p.name}')">구독하기</button>
       </div>`).join('');
   }
 
-  async function subscribe(priceId) {
+  async function subscribe(amount, planName) {
     if (!currentUser) { showToast('로그인 후 이용해주세요'); return; }
     try {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, userId: currentUser.id, userEmail: currentUser.email })
+        body: JSON.stringify({ amount, planName, userId: currentUser.id, userEmail: currentUser.email })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '결제 페이지 생성 실패');
